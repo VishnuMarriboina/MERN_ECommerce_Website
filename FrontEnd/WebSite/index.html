@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/LOGO.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Shoping</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pavani Jonnavaram - Resume</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 850px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 40px 20px;
+      }
+
+      .profile-img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .header-text {
+        display: flex;
+        flex-direction: column;
+        margin-left: 20px;
+      }
+
+      .header h1 {
+        font-size: 2em;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .header .title {
+        font-size: 1.3em;
+        margin-bottom: 20px;
+        opacity: 0.95;
+        font-weight: 300;
+        letter-spacing: 2px;
+      }
+
+      .contact-info {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        font-size: 0.95em;
+      }
+
+      .contact-info span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .content {
+        /* padding: 45px; */
+        padding: 10px 50px;
+      }
+
+      .section {
+        margin-bottom: 15px;
+        /* background-color: #ef4444; */
+      }
+
+      .section-title {
+        font-size: 1.4em;
+        color: #1e3a8a;
+        margin-bottom: 15px;
+        border-bottom: 3px solid #3b82f6;
+        font-weight: 600;
+      }
+
+      .summary {
+        text-align: justify;
+        line-height: 1.8;
+        color: #555;
+      }
+
+      .job {
+        margin-bottom: 25px;
+      }
+
+      .job-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+
+      .job-title {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #1e3a8a;
+      }
+
+      .company {
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 5px;
+      }
+
+      .date {
+        color: #666;
+        font-size: 0.9em;
+        font-style: italic;
+      }
+
+      .job ul {
+        margin-left: 20px;
+        margin-top: 10px;
+      }
+
+      .job li {
+        margin-bottom: 8px;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      .skills-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+      }
+
+      .skill-item {
+        background: #f0f7ff;
+        padding: 12px 15px;
+        border-radius: 5px;
+        border-left: 4px solid #3b82f6;
+      }
+
+      .education-item {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .edu-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 3px;
+      }
+
+      .institution {
+        color: #555;
+      }
+
+      .date {
+        color: #555;
+      }
+      .degree {
+        font-weight: 600;
+        color: #1e3a8a;
+        font-size: 1.05em;
+      }
+
+      .awards {
+        background: #fff9e6;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #fbbf24;
+      }
+
+      .awards ul {
+        margin-left: 20px;
+      }
+
+      .awards li {
+        margin-bottom: 8px;
+        color: #555;
+      }
+
+      .languages {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+      }
+
+      .language-item {
+        background: #f0fdf4;
+        padding: 10px 20px;
+        border-radius: 5px;
+        border-left: 4px solid #22c55e;
+      }
+
+      .projects {
+        background: #fef2f2;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #ef4444;
+      }
+
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .container {
+          box-shadow: none;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .header {
+          padding: 30px 20px;
+        }
+        .header h1 {
+          font-size: 2em;
+        }
+        .content {
+          padding: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img
+          src="./src/./assets/pavani.jpeg"
+          alt="Profile"
+          class="profile-img"
+        />
+
+        <div class="header-text">
+          <h1>PAVANI JONNAVARAM</h1>
+          <div class="title">SENIOR RESEARCH ANALYST</div>
+          <div class="contact-info">
+            <span>📧 pavanijonnavaram2789@gmail.com</span>
+            <span>📱 +91 6281880363</span>
+            <span>📍 Hyderabad, India</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="section">
+          <h2 class="section-title">Professional Summary</h2>
+          <p class="summary">
+            Detail-oriented and technically adept Research Analyst with over 35
+            months of experience in financial content operations. Proven
+            expertise in analyzing corporate financial statements across global
+            accounting standards including IFRS, IAS, and GAAP. Demonstrated
+            success in ensuring data integrity and supporting cross-functional
+            data initiatives while delivering accurate financial market data to
+            internal and external stakeholders. Passionate about data quality,
+            process improvement, and collaborative problem-solving with a strong
+            track record of excellence and team support.
+          </p>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Professional Experience</h2>
+
+          <div class="job">
+            <div class="job-header">
+              <div>
+                <div class="job-title">
+                  Senior Equity Research Analyst - FactSet Fundamentals
+                  Reimagine
+                </div>
+                <div class="company">FactSet India Pvt Ltd, Hyderabad</div>
+              </div>
+              <div class="date">January 2023 - Present</div>
+            </div>
+            <ul>
+              <li>
+                Analyze and process corporate financial statements across global
+                accounting standards (IFRS, IAS, GAAP)
+              </li>
+              <li>
+                Provide accurate and reliable demographic and statistical
+                financial market data to internal database and external
+                clientele
+              </li>
+              <li>
+                Ensure the integrity of company's financial market information
+                through rigorous quality control processes
+              </li>
+              <li>
+                Fulfill research, analytics, and market study requirements
+                requested by external clients to procure and retain business
+              </li>
+              <li>
+                Support clients on complex data queries and maintain company's
+                descriptive data including business summaries and textual
+                information
+              </li>
+              <li>
+                Collaborate closely with other analysts and departments to
+                support investment strategies and business objectives
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Technical Skills</h2>
+          <div class="skills-grid">
+            <div class="skill-item">Data Analysis</div>
+            <div class="skill-item">Data Collection</div>
+            <div class="skill-item">Financial Statement Analysis</div>
+            <div class="skill-item">IFRS, IAS & GAAP Standards</div>
+            <div class="skill-item">Cross-Team Communication</div>
+            <div class="skill-item">Analytical Thinking & Problem Solving</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Languages</h2>
+          <div class="languages">
+            <div class="language-item">
+              <strong>English</strong> - Proficient
+            </div>
+            <div class="language-item">
+              <strong>Telugu</strong> - Proficient
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Awards & Recognition</h2>
+          <div class="awards">
+            <ul>
+              <li>
+                <strong>Star Award</strong> - Recognized for dedication to the
+                pursuit of excellence
+              </li>
+              <li>
+                <strong>Blue Ribbon Award</strong> - Acknowledged for extended
+                support for the team
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Education</h2>
+
+          <div class="education-item">
+            <div class="degree">
+              Master of Business Administration (MBA) - Finance
+            </div>
+
+            <div class="edu-row">
+              <div class="institution">Aurora's PG College, Hyderabad</div>
+              <div class="date">October 2021 - August 2023</div>
+            </div>
+          </div>
+
+          <div class="education-item">
+            <div class="degree">
+              Bachelor of Commerce (Computer Applications)
+            </div>
+
+            <div class="edu-row">
+              <div class="institution">
+                Sri Vivekananda Degree College, Kadapa
+              </div>
+              <div class="date">June 2018 - July 2021</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Personal Projects</h2>
+          <div class="projects">
+            <strong>Cash Flow Statement Analysis</strong> - Developed
+            comprehensive cash flow statement models and analysis frameworks
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Key Attributes</h2>
+          <div class="skills-grid">
+            <div class="skill-item">Independent Working Ability</div>
+            <div class="skill-item">Positive Attitude</div>
+            <div class="skill-item">Flexibility & Adaptability</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Print functionality
+      document.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+          e.preventDefault();
+          window.print();
+        }
+      });
+    </script>
+  </body>
+</html> -->
+ 
