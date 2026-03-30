@@ -62,21 +62,28 @@ All sensitive configurations are managed through **environment variables**.
 ## 📁 Folder Structure
 
 ```
-WebApplication/
+MERN_ECommerce_Website/
 │
-├── frontend/                # React frontend
-│   ├── src/
-│   ├── public/
-│   └── package.json
+├── FrontEnd/
+│   └── WebSite/             # React + Vite frontend
+│       ├── src/
+│       │   ├── components/
+│       │   ├── pages/
+│       │   ├── dashboard/
+│       │   ├── Redux/
+│       │   └── utils/
+│       └── package.json
 │
-├── backend/                 # Node.js backend
+├── Backend/                 # Node.js + Express backend
 │   ├── controllers/
 │   ├── models/
 │   ├── routes/
-│   ├── middleware/
+│   ├── middlewear/
+│   ├── seed.js              # Database seeder
+│   ├── index.js
 │   └── package.json
 │
-├── .gitignore               # Common ignore file
+├── .gitignore
 └── README.md
 ```
 
@@ -114,9 +121,11 @@ Sensitive data is stored using environment variables.
 ### Backend `.env` Example
 
 ```
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
+PORT=5500
+MDB_URI=mongodb://localhost:27017/myStore
+ALLOWED_ORIGINS=http://localhost:5173,https://myapp.com
 JWT_SECRET=your_jwt_secret
+JWT_REFRESH_SECRET=your_jwt_refresh_secret
 ```
 
 > ⚠️ **Do not commit `.env` files to version control.**
@@ -128,30 +137,68 @@ JWT_SECRET=your_jwt_secret
 ### Step 1: Clone the Repository
 
 ```
-git clone https://github.com/yourusername/WebApplication.git
-cd WebApplication
+git clone https://github.com/yourusername/MERN_ECommerce_Website.git
+cd MERN_ECommerce_Website
 ```
 
 ### Step 2: Backend Setup
 
 ```
-cd backend
+cd Backend
 npm install
+```
+
+### Step 3: Seed the Database
+
+Before starting the server, populate the database with sample users, products, and orders:
+
+```
+npm run seed
+```
+
+This will insert:
+
+| Collection | Records |
+|---|---|
+| Users | 5 (2 Admins, 3 Users) |
+| Shirts | 5 products |
+| T-Shirts | 5 products |
+| Belts | 4 products |
+| Watches | 5 products |
+| Shoes | 5 products |
+| Sandals | 5 products |
+| Orders | 9 sample orders |
+
+**Seed credentials:**
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | arjun.admin@store.com | Admin@123 |
+| Admin | sneha.admin@store.com | Admin@456 |
+| User | priya.mehta@gmail.com | User@123 |
+| User | rahul.verma@gmail.com | User@456 |
+| User | ananya.k@gmail.com | User@789 |
+
+> ℹ️ The seed script is **idempotent** — running it multiple times will not create duplicate records.
+
+### Step 4: Start the Backend
+
+```
 npm start
 ```
 
-### Step 3: Frontend Setup
+### Step 5: Frontend Setup
 
 ```
-cd frontend
+cd ../FrontEnd/WebSite
 npm install
-npm start
+npm run dev
 ```
 
 ### Application URLs
 
-* **Frontend:** [http://localhost:3000](http://localhost:3000)
-* **Backend API:** [http://localhost:5000](http://localhost:5000)
+* **Frontend:** [http://localhost:5173](http://localhost:5173)
+* **Backend API:** [http://localhost:5500](http://localhost:5500)
 
 ---
 

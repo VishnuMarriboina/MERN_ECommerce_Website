@@ -1,7 +1,6 @@
 const { Shoes } = require("../../models/FootWears");
 
 // GET SHOES
-
 const getShoes = async (req, res) => {
   try {
     let shoes;
@@ -78,35 +77,6 @@ const addShoesCollection = async (req, res) => {
 };
 
 // ADD VARIANT
-
-const addVariantold = async (req, res) => {
-  try {
-    const shoeId = req.params.id;
-    const { size, cost, count, shoe_type, lacing_type, image_url } = req.body;
-
-    const shoe = await Shoes.findById(shoeId);
-    if (!shoe) return res.status(404).json({ message: "Shoe not found" });
-
-    shoe.variants.push({
-      size,
-      cost,
-      count,
-      shoe_type,
-      lacing_type,
-      image_url: image_url?.trim() || "No image found",
-    });
-
-    await shoe.save();
-
-    return res.status(200).json({
-      message: "Variant added successfully",
-      data: shoe,
-    });
-  } catch (error) {
-    console.error("Error adding variant:", error);
-    return res.status(400).json({ message: error.message });
-  }
-};
 
 const addVariant = async (req, res) => {
   try {
@@ -185,36 +155,6 @@ const updateVariant = async (req, res) => {
 };
 
 // DELETE VARIANT
-
-const deleteVariantold = async (req, res) => {
-  try {
-    const shoeId = req.params.id;
-    const variantId = req.params.variantId;
-
-
-    //console.log("params", req.params);
-
-    //console.log("delete variant was triggred", shoeId, variantId);
-
-    const shoe = await Shoes.findById(shoeId);
-    if (!shoe) return res.status(404).json({ message: "Shoe not found" });
-
-    shoe.variants = shoe.variants.filter((v) => v._id.toString() !== variantId);
-
-    // console.log("shoe.variants", shoe);
-
-    await shoe.save();
-
-    return res.status(200).json({
-      message: "Variant deleted successfully",
-      data: shoe,
-    });
-  } catch (error) {
-    console.error("Error deleting variant:", error);
-    return res.status(400).json({ message: error.message });
-  }
-};
-
 
 const deleteVariant = async (req, res) => {
   try {

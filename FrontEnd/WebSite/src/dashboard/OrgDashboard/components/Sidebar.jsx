@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { logoutUser } from "../../../Redux/slices/AuthSlice";
 import { persistor } from "../../../Redux/Store";
 import { useDispatch } from "react-redux";
@@ -14,102 +14,132 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   ];
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to logout?");
-    if (!confirmLogout) return;
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
     persistor.purge();
     dispatch(logoutUser());
     navigate("/login", { replace: true });
   };
 
   return (
-    <aside style={styles.sidebar}>
-      {/* <h3 style={styles.title}>Admin Panel</h3> */}
-      <nav style={styles.nav}>
-        {tabs.map((tab) => (
+    <>
+      <aside style={styles.sidebar}>
+        <nav style={styles.nav}>
+          {tabs.map((tab) => (
+            <div
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                ...styles.navItem,
+                ...(activeTab === tab.key
+                  ? { ...styles.navBtn, ...styles.navBtnActive }
+                  : styles.navBtn),
+              }}
+            >
+              <span style={styles.icon}>{tab.icon}</span>
+              <span style={styles.label}>{tab.label}</span>
+            </div>
+          ))}
+
           <div
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={handleLogout}
             style={{
               ...styles.navItem,
-              ...(activeTab === tab.key
-                ? { ...styles.navBtn, ...styles.navBtnActive }
-                : styles.navBtn),
+              ...styles.navBtn,
+              color: "red",
+              cursor: "pointer",
             }}
           >
-            <span style={styles.icon}>{tab.icon}</span>
-            <span style={styles.label}>{tab.label}</span>
+            <span style={styles.icon}>🚪</span>
+            <span style={styles.label}>Logout</span>
           </div>
-        ))}
+        </nav>
+      </aside>
 
-        <div
-          onClick={handleLogout}
-          style={{
-            ...styles.navItem,
-            ...styles.navBtn,
-            color: "red",
-            cursor: "pointer",
-          }}
-        >
-          <span style={styles.icon}>🚪</span>
-          <span style={styles.label}>Logout</span>
+      {showLogoutConfirm && (
+        <div style={logoutStyles.overlay}>
+          <div style={logoutStyles.modal}>
+            <div style={logoutStyles.icon}>🔓</div>
+            <h3 style={logoutStyles.title}>Logout</h3>
+            <p style={logoutStyles.message}>Are you sure you want to logout?</p>
+            <div style={logoutStyles.actions}>
+              <button style={logoutStyles.stayBtn} onClick={() => setShowLogoutConfirm(false)}>
+                Stay
+              </button>
+              <button style={logoutStyles.confirmBtn} onClick={confirmLogout}>
+                Confirm
+              </button>
+            </div>
+          </div>
         </div>
-      </nav>
-    </aside>
+      )}
+    </>
   );
 }
 
-const stylesold = {
-  sidebar: {
-    width: "240px",
-    backgroundColor: "#75787eff",
-    color: "#fff",
-    display: "flex",
-    flexDirection: "column",
-    padding: "24px 16px",
-    boxShadow: "2px 0 6px rgba(0,0,0,0.1)",
-  },
-
-  title: {
-    fontSize: "18px",
-    fontWeight: 600,
-    marginBottom: "32px",
-    textAlign: "center",
-    letterSpacing: "0.5px",
-  },
-
-  nav: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  navItem: {
+const logoutStyles = {
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "12px 16px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    color: "#d1d5db",
-    transition: "all 0.2s ease",
+    justifyContent: "center",
+    zIndex: 1000,
   },
-
-  activeNavItem: {
-    backgroundColor: "#2563eb",
-    color: "#fff",
-    boxShadow: "0 2px 6px rgba(37,99,235,0.4)",
-  },
-
-  icon: {
-    fontSize: "18px",
-    width: "22px",
+  modal: {
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "32px 28px",
+    width: "320px",
     textAlign: "center",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
   },
-
-  label: {
-    fontSize: "15px",
-    fontWeight: 500,
+  icon: {
+    fontSize: "40px",
+    marginBottom: "12px",
+  },
+  title: {
+    margin: "0 0 8px",
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  message: {
+    margin: "0 0 24px",
+    fontSize: "14px",
+    color: "#64748b",
+  },
+  actions: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "12px",
+  },
+  stayBtn: {
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "1px solid #cbd5e0",
+    backgroundColor: "#f1f5f9",
+    color: "#374151",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  confirmBtn: {
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "none",
+    backgroundColor: "#dc2626",
+    color: "#fff",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
   },
 };
 

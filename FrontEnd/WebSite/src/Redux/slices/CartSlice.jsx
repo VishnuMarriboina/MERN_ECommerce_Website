@@ -117,42 +117,10 @@ export const getCart = () => {
 };
 
 // ✅ Update Quantity
-export const updateCartQuantityold = (
-  cartItemId = productId,
-  productModel,
-  quantity
-) => {
-  return async (dispatch) => {
-    try {
-      dispatch(setCartLoading(true));
-      const res = await api.put("/cart/update-qty", {
-        cartItemId,
-        productModel,
-        quantity,
-      });
-
-      dispatch(setCartItems(res.data.items));
-    } catch (error) {
-      dispatch(
-        setCartError(
-          error?.response?.data?.error || "Failed to update quantity"
-        )
-      );
-    } finally {
-      dispatch(setCartLoading(false));
-    }
-  };
-};
-
 export const updateCartQuantity = (cartItemId, productModel, quantity) => {
   return async (dispatch, getState) => {
     try {
       dispatch(setCartLoading(true));
-
-      console.log("cartItemId", cartItemId);
-      console.log("quantity", quantity);
-      console.log("productModel", productModel);
-      // console.log("variantId", variantId);
 
       const res = await api.put("/cart/update-qty", {
         cartItemId,
@@ -236,45 +204,6 @@ export const clearCart = () => {
       dispatch(
         setCartError(error?.response?.data?.error || "Failed to clear cart")
       );
-    } finally {
-      dispatch(setCartLoading(false));
-    }
-  };
-};
-
-// ✅ BUY ALL ITEMS (Single API call)
-export const buyAllCartItemsAsyncold = (paymentType) => {
-  return async (dispatch) => {
-    try {
-      // console.log("paymentType", paymentType);
-      dispatch(setCartLoading(true));
-      dispatch(setCartError(null));
-
-      const res = await api.post(`/cart/buy-all`, paymentType);
-
-      // console.log("res in the buyAllCartItems", res);
-
-      dispatch(setResults(res.data.results));
-
-      const allSuccess = Object.values(res.data.results).every(
-        (r) => r.success === true
-      );
-      dispatch(setPurchaseSuccess(allSuccess));
-
-      // Update remaining items in cart (failed only)
-      dispatch(setRemainingCart(res.data.remainingItems || []));
-      return {
-        success: true,
-        remainingItems: res.data.remainingItems,
-        results: res.data.results,
-      };
-    } catch (error) {
-      dispatch(
-        setCartError(
-          error?.response?.data?.error || "Failed to process purchase"
-        )
-      );
-      return { success: false };
     } finally {
       dispatch(setCartLoading(false));
     }

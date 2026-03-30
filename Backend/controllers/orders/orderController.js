@@ -9,27 +9,6 @@ const getMyOrders = async (req, res) => {
       count: orders.length,
       orders,
     });
-
-    // console.log("get my orders", orders);
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to fetch orders",
-      details: error.message,
-    });
-  }
-};
-
-const getAllOrders = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const orders = await Orders.find({ userId }).sort({ orderedDate: -1 });
-
-    res.status(200).json({
-      count: orders.length,
-      orders,
-    });
-
-    // console.log("get all orders", orders);
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch orders",
@@ -169,7 +148,6 @@ const cancelOrder = async (req, res) => {
 
 module.exports = {
   getMyOrders,
-  getAllOrders,
   updateOrderStatus,
   cancelOrder,
   getAllOrdersForAdmin,

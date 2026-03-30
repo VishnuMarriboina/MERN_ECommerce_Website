@@ -46,7 +46,7 @@ const signUpUser = async (req, res) => {
 
     //  console.log("📥 [BACKEND] Sign up attempt:", req.body);
     // Validation
-    if ((!name || !email || !phoneNumber || !password, !User_Role)) {
+    if (!name || !email || !phoneNumber || !password || !User_Role) {
       return res.status(400).json({ error: "All fields are required" });
     }
 

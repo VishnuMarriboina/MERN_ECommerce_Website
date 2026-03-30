@@ -7,10 +7,7 @@ const {
   updateUserProfile,
   forgotPassword,
 } = require("../../controllers/usersData/usersController");
-const {
-  authMiddleware,
-  authorizeRoles,
-} = require("../../middlewear/authMiddlewear");
+const { authMiddleware } = require("../../middlewear/authMiddlewear");
 const router = express.Router();
 
 router.get(

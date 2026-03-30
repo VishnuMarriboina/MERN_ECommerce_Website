@@ -2,16 +2,12 @@ const express = require("express");
 const router = express.Router();
 const {
   getMyOrders,
-  getAllOrders,
   updateOrderStatus,
   cancelOrder,
   getAllOrdersForAdmin,
 } = require("../../controllers/orders/orderController");
 
-const {
-  authMiddleware,
-  authorizeRoles,
-} = require("../../middlewear/authMiddlewear");
+const { authMiddleware } = require("../../middlewear/authMiddlewear");
 
 router.get("/my-orders", authMiddleware, getMyOrders);
 router.get(

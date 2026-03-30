@@ -60,7 +60,7 @@ export const updateSandal = (payload) => async (dispatch) => {
     // console.log("id", payload.id);
     const response = await api.put(
       `/footwear/update-Sandals/${payload.id}`,
-    payload
+      payload
     );
     dispatch(sandalSuccess(response.data));
   } catch (error) {

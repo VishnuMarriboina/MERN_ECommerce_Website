@@ -8,10 +8,3 @@ export default function extractPhone(value) {
   // Always return last 10 digits
   return cleaned.slice(-10);
 }
-import React from "react";
-
-// export default function extractPhone() {
-//   return (
-//     <div>extractPhone</div>
-//   )
-// }

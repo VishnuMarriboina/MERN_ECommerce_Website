@@ -97,7 +97,7 @@ const addVariant = async (req, res) => {
     if (req.user.User_Role?.toLowerCase() !== "admin") {
       return res
         .status(403)
-        .json({ message: "Only admins can add tshirtsvariants" });
+        .json({ message: "Only admins can add tshirt variants" });
     }
     const { id: tshirtId } = req.params;
     const { size, color, fit, cost, count, image_url } = req.body;
@@ -140,7 +140,7 @@ const addVariant = async (req, res) => {
       data: tshirt,
     });
   } catch (err) {
-    console.log("error", err);
+    console.error("Error adding variant:", err);
     res.status(500).json({ message: "Failed to add variant" });
   }
 };

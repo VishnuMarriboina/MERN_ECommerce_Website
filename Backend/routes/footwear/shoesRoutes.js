@@ -1,9 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {
-  authMiddleware,
-  authorizeRoles,
-} = require("../../middlewear/authMiddlewear");
+const { authMiddleware } = require("../../middlewear/authMiddlewear");
 const {
   getShoes,
   addShoesCollection,

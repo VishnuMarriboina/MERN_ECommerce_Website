@@ -130,17 +130,7 @@ export default function Belts() {
     });
   };
 
-  // Get display data for a product card
-  const getDisplayDataold = (product) => {
-    const variant = getMatchingVariant(product);
-    return {
-      ...product,
-      ...(variant || {}),
-    };
-  };
-
-
-    const getDisplayData = (product) => {
+  const getDisplayData = (product) => {
     const productId = product._id || product.id;
     const selections = selectedVariants[productId] || {};
     const variant = getMatchingVariant(product);

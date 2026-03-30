@@ -92,11 +92,8 @@ export const addVariant = (data) => async (dispatch) => {
       `/accessories/${data.id}/addVariant`,
       data.variantData
     );
-    console.log("response in the 97", response.response.data);
     dispatch(beltSuccess(response.data));
   } catch (error) {
-    console.log("error in belt slice", error);
-    console.log("error in belt slice", error?.response?.data?.message);
     dispatch(beltError(error?.response?.data?.message));
   }
 };

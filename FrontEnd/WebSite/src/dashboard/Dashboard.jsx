@@ -27,6 +27,7 @@ function Dashboard() {
     return sessionStorage.getItem("activeTab");
   });
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef(null);
   const toggleDropdown = () => setShowDropdown(!showDropdown);
   // Close dropdown when clicking outside
@@ -92,8 +93,11 @@ function Dashboard() {
 
   const handleLogout = () => {
     setShowDropdown(false);
-    const confirmLogout = window.confirm("Are you sure you want to logout?");
-    if (!confirmLogout) return;
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
     persistor.purge();
     dispatch(logoutUser());
     navigate("/login", { replace: true });
@@ -332,6 +336,24 @@ function Dashboard() {
         </Routes>
       </div>
       <Footer />
+
+      {showLogoutConfirm && (
+        <div style={logoutStyles.overlay}>
+          <div style={logoutStyles.modal}>
+            <div style={logoutStyles.icon}>🔓</div>
+            <h3 style={logoutStyles.title}>Logout</h3>
+            <p style={logoutStyles.message}>Are you sure you want to logout?</p>
+            <div style={logoutStyles.actions}>
+              <button style={logoutStyles.stayBtn} onClick={() => setShowLogoutConfirm(false)}>
+                Stay
+              </button>
+              <button style={logoutStyles.confirmBtn} onClick={confirmLogout}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -545,5 +567,65 @@ const styles = {
   footerCopyright: {
     color: "#cbd5e0",
     fontSize: "0.85rem",
+  },
+};
+
+const logoutStyles = {
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  modal: {
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "32px 28px",
+    width: "320px",
+    textAlign: "center",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+  },
+  icon: {
+    fontSize: "40px",
+    marginBottom: "12px",
+  },
+  title: {
+    margin: "0 0 8px",
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  message: {
+    margin: "0 0 24px",
+    fontSize: "14px",
+    color: "#64748b",
+  },
+  actions: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "12px",
+  },
+  stayBtn: {
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "1px solid #cbd5e0",
+    backgroundColor: "#f1f5f9",
+    color: "#374151",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  confirmBtn: {
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "none",
+    backgroundColor: "#dc2626",
+    color: "#fff",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
   },
 };

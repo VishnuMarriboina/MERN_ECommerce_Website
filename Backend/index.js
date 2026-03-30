@@ -54,8 +54,9 @@ app.use("/api/users", usersRoutes);
 app.use("/api/cart", require("./routes/cart/cartRoutes"));
 app.use("/api/orders", require("./routes/orders/ordersRoutes"));
 
-app.listen(5500, () => {
-  console.log("Server is running  http://localhost:5500");
+const PORT = process.env.PORT || 5500;
+app.listen(PORT, () => {
+  console.log(`Server is running  http://localhost:${PORT}`);
 });
 
 module.exports = app;
