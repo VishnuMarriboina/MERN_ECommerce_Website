@@ -116,19 +116,45 @@ Admins can:
 
 ## 🔐 Environment Configuration
 
-Sensitive data is stored using environment variables.
+Sensitive credentials are stored in a `.env` file that is **never committed to version control**.
 
-### Backend `.env` Example
+### Why `.env` must stay out of git
+
+| Risk | Detail |
+|---|---|
+| Leaked DB credentials | Anyone with the URI can access/wipe your database |
+| Leaked JWT secrets | Attackers can forge valid auth tokens for any user |
+| Irreversible exposure | Even after deletion, git history retains the secrets |
+
+### Setup
+
+A `.env.example` file is included in the repo as a safe template. Copy it and fill in your own values:
+
+```bash
+cd Backend
+cp .env.example .env
+```
+
+Then edit `.env`:
 
 ```
 PORT=5500
 MDB_URI=mongodb://localhost:27017/myStore
-ALLOWED_ORIGINS=http://localhost:5173,https://myapp.com
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_jwt_refresh_secret
+ALLOWED_ORIGINS=http://localhost:5173,https://yourdomain.com
+JWT_SECRET=your_long_random_secret
+JWT_REFRESH_SECRET=your_long_random_refresh_secret
 ```
 
-> ⚠️ **Do not commit `.env` files to version control.**
+### Generate secure secrets
+
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+Run this twice — once for `JWT_SECRET`, once for `JWT_REFRESH_SECRET`.
+
+> ⚠️ **Never commit `.env` to git.** It is listed in `.gitignore` and must stay there.
+> ✅ **Always commit `.env.example`** — it shows the required keys without exposing real values.
 
 ---
 
