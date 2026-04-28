@@ -6,7 +6,7 @@ This project demonstrates **role-based authentication**, **product management**,
 
 ---
 
-## 📖 Project Overview
+## 📖 Project Overview         
 
 This application is designed as an **e-commerce–style platform** where users can browse and purchase products, while administrators manage products, orders, and users.
 
