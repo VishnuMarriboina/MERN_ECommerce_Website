@@ -1,4 +1,3 @@
-
 # Web Development Application (MERN Stack)
 
 A **full-stack web development application** built using the **MERN stack (MongoDB, Express.js, React.js, and Node.js)**.
@@ -6,7 +5,7 @@ This project demonstrates **role-based authentication**, **product management**,
 
 ---
 
-## 📖 Project Overview         
+## 📖 Project Overview
 
 This application is designed as an **e-commerce–style platform** where users can browse and purchase products, while administrators manage products, orders, and users.
 
@@ -18,22 +17,22 @@ The system uses **role-based access control (RBAC)** to differentiate functional
 
 ### Frontend
 
-* React.js
-* JavaScript (ES6+)
-* HTML5 & CSS3
-* Axios (API communication)
+- React.js
+- JavaScript (ES6+)
+- HTML5 & CSS3
+- Axios (API communication)
 
 ### Backend
 
-* Node.js
-* Express.js
-* RESTful APIs
-* JWT-based authentication
+- Node.js
+- Express.js
+- RESTful APIs
+- JWT-based authentication
 
 ### Database
 
-* MongoDB
-* Mongoose ODM
+- MongoDB
+- Mongoose ODM
 
 ---
 
@@ -41,19 +40,19 @@ The system uses **role-based access control (RBAC)** to differentiate functional
 
 ### Frontend (React.js)
 
-* Handles UI rendering and user interactions
-* Communicates with backend APIs using Axios
-* Manages authentication state and protected routes
+- Handles UI rendering and user interactions
+- Communicates with backend APIs using Axios
+- Manages authentication state and protected routes
 
 ### Backend (Node.js & Express.js)
 
-* Manages authentication and authorization
-* Handles business logic and API endpoints
-* Secures routes using JWT middleware
+- Manages authentication and authorization
+- Handles business logic and API endpoints
+- Secures routes using JWT middleware
 
 ### Database (MongoDB)
 
-* Stores users, products, orders, and role-based data
+- Stores users, products, orders, and role-based data
 
 All sensitive configurations are managed through **environment variables**.
 
@@ -95,22 +94,22 @@ MERN_ECommerce_Website/
 
 Users can:
 
-* Register and log in securely
-* View available products
-* Purchase products
-* View order history
-* Manage personal profile information
+- Register and log in securely
+- View available products
+- Purchase products
+- View order history
+- Manage personal profile information
 
 ### 🔹 Admin Role
 
 Admins can:
 
-* Add new products
-* Update existing product details
-* Delete products
-* View and track all orders
-* Monitor registered users
-* View total user count on the platform
+- Add new products
+- Update existing product details
+- Delete products
+- View and track all orders
+- Monitor registered users
+- View total user count on the platform
 
 ---
 
@@ -120,10 +119,10 @@ Sensitive credentials are stored in a `.env` file that is **never committed to v
 
 ### Why `.env` must stay out of git
 
-| Risk | Detail |
-|---|---|
-| Leaked DB credentials | Anyone with the URI can access/wipe your database |
-| Leaked JWT secrets | Attackers can forge valid auth tokens for any user |
+| Risk                  | Detail                                               |
+| --------------------- | ---------------------------------------------------- |
+| Leaked DB credentials | Anyone with the URI can access/wipe your database    |
+| Leaked JWT secrets    | Attackers can forge valid auth tokens for any user   |
 | Irreversible exposure | Even after deletion, git history retains the secrets |
 
 ### Setup
@@ -184,26 +183,26 @@ npm run seed
 
 This will insert:
 
-| Collection | Records |
-|---|---|
-| Users | 5 (2 Admins, 3 Users) |
-| Shirts | 5 products |
-| T-Shirts | 5 products |
-| Belts | 4 products |
-| Watches | 5 products |
-| Shoes | 5 products |
-| Sandals | 5 products |
-| Orders | 9 sample orders |
+| Collection | Records               |
+| ---------- | --------------------- |
+| Users      | 5 (2 Admins, 3 Users) |
+| Shirts     | 5 products            |
+| T-Shirts   | 5 products            |
+| Belts      | 4 products            |
+| Watches    | 5 products            |
+| Shoes      | 5 products            |
+| Sandals    | 5 products            |
+| Orders     | 9 sample orders       |
 
 **Seed credentials:**
 
-| Role | Email | Password |
-|---|---|---|
+| Role  | Email                 | Password  |
+| ----- | --------------------- | --------- |
 | Admin | arjun.admin@store.com | Admin@123 |
 | Admin | sneha.admin@store.com | Admin@456 |
-| User | priya.mehta@gmail.com | User@123 |
-| User | rahul.verma@gmail.com | User@456 |
-| User | ananya.k@gmail.com | User@789 |
+| User  | priya.mehta@gmail.com | User@123  |
+| User  | rahul.verma@gmail.com | User@456  |
+| User  | ananya.k@gmail.com    | User@789  |
 
 > ℹ️ The seed script is **idempotent** — running it multiple times will not create duplicate records.
 
@@ -223,8 +222,8 @@ npm run dev
 
 ### Application URLs
 
-* **Frontend:** [http://localhost:5173](http://localhost:5173)
-* **Backend API:** [http://localhost:5500](http://localhost:5500)
+- **Frontend:** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://localhost:5500](http://localhost:5500)
 
 ---
 
@@ -241,22 +240,22 @@ npm run dev
 
 ## 🔒 Security Practices
 
-* JWT-based authentication
-* Role-based authorization (Admin / User)
-* Secure environment variable usage
-* Protected routes for admin-only access
-* Centralized error handling
+- JWT-based authentication
+- Role-based authorization (Admin / User)
+- Secure environment variable usage
+- Protected routes for admin-only access
+- Centralized error handling
 
 ---
 
 ## 🚧 Future Enhancements
 
-* Payment gateway integration
-* Product search and filtering
-* Pagination and performance optimization
-* Admin analytics dashboard
-* Email notifications
-* Refresh token implementation
+- Payment gateway integration
+- Product search and filtering
+- Pagination and performance optimization
+- Admin analytics dashboard
+- Email notifications
+- Refresh token implementation
 
 ---
 
@@ -266,4 +265,4 @@ This project is licensed under the **MIT License**.
 
 ---
 
-⭐ *If you find this project useful, consider giving it a star!*
+⭐ _If you find this project useful, consider giving it a star!_
