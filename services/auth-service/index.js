@@ -1,5 +1,4 @@
 const express = require("express");
-const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
@@ -12,7 +11,6 @@ mongoose
   .then(() => console.log("[auth-service] Connected to MongoDB"))
   .catch((err) => console.error("[auth-service] MongoDB connection failed:", err));
 
-app.use(cors({ credentials: true, methods: ["GET", "POST", "PUT", "DELETE"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(cookieParser());
 app.use(express.json());
 

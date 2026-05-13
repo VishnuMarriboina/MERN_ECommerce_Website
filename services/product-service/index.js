@@ -1,5 +1,4 @@
 const express = require("express");
-const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -11,7 +10,6 @@ mongoose
   .then(() => console.log("[product-service] Connected to MongoDB"))
   .catch((err) => console.error("[product-service] MongoDB connection failed:", err));
 
-app.use(cors({ credentials: true, methods: ["GET", "POST", "PUT", "DELETE"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 
 app.use("/api/clothes", require("./routes/clothes/shirtsRoutes"));

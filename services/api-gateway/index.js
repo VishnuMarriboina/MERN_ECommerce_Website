@@ -28,7 +28,12 @@ const PRODUCT_SERVICE = process.env.PRODUCT_SERVICE_URL || "http://localhost:300
 const CART_SERVICE = process.env.CART_SERVICE_URL || "http://localhost:3003";
 const ORDER_SERVICE = process.env.ORDER_SERVICE_URL || "http://localhost:3004";
 
-const proxyOptions = { parseReqBody: false };
+// Preserve the full original path so services receive e.g. "/api/users/login"
+// instead of the prefix-stripped "/login" that Express would normally pass down.
+const proxyOptions = {
+  parseReqBody: false,
+  proxyReqPathResolver: (req) => req.originalUrl,
+};
 
 app.use("/api/users", proxy(AUTH_SERVICE, proxyOptions));
 app.use("/api/clothes", proxy(PRODUCT_SERVICE, proxyOptions));

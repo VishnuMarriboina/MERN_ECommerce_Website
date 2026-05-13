@@ -3,16 +3,15 @@
  * Run: node seed.js
  */
 
-const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const User = require("./models/users");
-const { Shirts, Tshirts } = require("./models/Cloths");
-const { Belts, Watches } = require("./models/Accessories");
-const { Shoes, Sandles } = require("./models/FootWears");
-const Order = require("./models/orders");
+const User = require("../services/auth-service/models/users");
+const { Shirts, Tshirts } = require("../services/product-service/models/Cloths");
+const { Belts, Watches } = require("../services/product-service/models/Accessories");
+const { Shoes, Sandles } = require("../services/product-service/models/FootWears");
+const Order = require("../services/order-service/models/orders");
 
 const MONGO_URI = process.env.MDB_URI || "mongodb://localhost:27017/newShop";
 
@@ -1016,8 +1015,12 @@ async function insertIfNew(Model, naturalKey, doc) {
    MAIN SEED FUNCTION
 ───────────────────────────────────────────── */
 async function seed() {
-  await mongoose.connect(MONGO_URI);
-  console.log("✅ Connected to MongoDB:", MONGO_URI);
+  // Each microservice has its own mongoose instance in its node_modules.
+  // Connect every unique instance so all models can reach the DB.
+  const allModels = [User, Shirts, Tshirts, Belts, Watches, Shoes, Sandles, Order];
+  const mongooseInstances = [...new Set(allModels.map((m) => m.db.base))];
+  await Promise.all(mongooseInstances.map((m) => m.connect(MONGO_URI)));
+  console.log(`✅ Connected to MongoDB: ${MONGO_URI} (${mongooseInstances.length} instance(s))`);
 
   const stats = {
     users: { inserted: 0, skipped: 0 },
@@ -1380,12 +1383,11 @@ async function seed() {
   console.log("  User 2  → rahul.verma@gmail.com   / User@456");
   console.log("  User 3  → ananya.k@gmail.com      / User@789");
 
-  await mongoose.disconnect();
+  await Promise.all(mongooseInstances.map((m) => m.disconnect()));
   console.log("\n🔌 Disconnected from MongoDB");
 }
 
 seed().catch((err) => {
   console.error("❌ Seed failed:", err.message);
-  mongoose.disconnect();
   process.exit(1);
 });
