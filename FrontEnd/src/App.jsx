@@ -6,6 +6,7 @@ import ProtectedRoute from "./utils/ProtectedRoute";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./Redux/slices/AuthSlice";
 import AdminDashboard from "./dashboard/OrgDashboard/Admin/AdminDashboard";
+import Todo from "../src/pages/Todo";
 
 function App() {
   const user = useSelector(selectCurrentUser);
@@ -26,6 +27,7 @@ function App() {
         }
       />
     </Routes>
+    // <Todo />
   );
 }
 

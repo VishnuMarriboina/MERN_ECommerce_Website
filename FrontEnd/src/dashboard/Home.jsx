@@ -1,4 +1,10 @@
 import React from "react";
+import {
+  HOME_FEATURE_CARDS,
+  HOME_INFO_CARDS,
+  HOME_STATUS_CARDS,
+  HOME_FEATURE_BADGES,
+} from "./DataFolder/dashboardData";
 
 export default function UserDashboard() {
   return (
@@ -23,231 +29,70 @@ export default function UserDashboard() {
           experience.
         </p>
         <div style={styles.featureGrid}>
-          <div style={styles.featureBadge}>
-            <span style={styles.badgeIcon}>🚚</span>
-            <span style={styles.badgeText}>Free Shipping</span>
-          </div>
-          <div style={styles.featureBadge}>
-            <span style={styles.badgeIcon}>🔄</span>
-            <span style={styles.badgeText}>Easy Returns</span>
-          </div>
-          <div style={styles.featureBadge}>
-            <span style={styles.badgeIcon}>💳</span>
-            <span style={styles.badgeText}>Secure Payment</span>
-          </div>
+          {HOME_FEATURE_BADGES.map(({ icon, text }) => (
+            <div key={text} style={styles.featureBadge}>
+              <span style={styles.badgeIcon}>{icon}</span>
+              <span style={styles.badgeText}>{text}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Main Feature Cards */}
       <div style={styles.cardsContainer}>
-        <div
-          style={styles.card}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.borderColor = "#3b82f6";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.borderColor = "#e1e5ebff";
-          }}
-        >
+        {HOME_FEATURE_CARDS.map(({ icon, title, description, gradient, hoverBorder, tags, tagColor }) => (
           <div
-            style={{
-              ...styles.iconBox,
-              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            key={title}
+            style={styles.card}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.05)";
+              e.currentTarget.style.borderColor = hoverBorder;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.borderColor = "#e1e5ebff";
             }}
           >
-            <span style={styles.cardIcon}>🛒</span>
+            <div style={{ ...styles.iconBox, background: gradient }}>
+              <span style={styles.cardIcon}>{icon}</span>
+            </div>
+            <h3 style={styles.cardTitle}>{title}</h3>
+            <p style={styles.cardDescription}>{description}</p>
+            <div style={styles.tagContainer}>
+              {tags.map((tag) => (
+                <span key={tag} style={{ ...styles.tag, background: tagColor }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
-          <h3 style={styles.cardTitle}>Browse Products</h3>
-          <p style={styles.cardDescription}>
-            Explore our extensive collection of fashion items. Filter by
-            category, price, size, and find exactly what you're looking for.
-          </p>
-          <div style={styles.tagContainer}>
-            <span style={{ ...styles.tag, background: "#3b82f6" }}>
-              Shop Now
-            </span>
-            <span style={{ ...styles.tag, background: "#3b82f6" }}>
-              New Arrivals
-            </span>
-          </div>
-        </div>
-
-        <div
-          style={styles.card}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.borderColor = "#10b981";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.borderColor = "#e1e5ebff";
-          }}
-        >
-          <div
-            style={{
-              ...styles.iconBox,
-              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-            }}
-          >
-            <span style={styles.cardIcon}>📦</span>
-          </div>
-          <h3 style={styles.cardTitle}>My Orders</h3>
-          <p style={styles.cardDescription}>
-            View all your orders, track shipments in real-time, check delivery
-            status, and access order details anytime.
-          </p>
-          <div style={styles.tagContainer}>
-            <span style={{ ...styles.tag, background: "#10b981" }}>
-              Track Order
-            </span>
-            <span style={{ ...styles.tag, background: "#10b981" }}>
-              Order History
-            </span>
-          </div>
-        </div>
-
-        <div
-          style={styles.card}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.borderColor = "#a855f7";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.borderColor = "#e1e5ebff";
-          }}
-        >
-          <div
-            style={{
-              ...styles.iconBox,
-              background: "linear-gradient(135deg, #a855f7 0%, #9333ea 100%)",
-            }}
-          >
-            <span style={styles.cardIcon}>🛍️</span>
-          </div>
-          <h3 style={styles.cardTitle}>Shopping Cart</h3>
-          <p style={styles.cardDescription}>
-            Review items in your cart, update quantities, apply discount codes,
-            and proceed to secure checkout.
-          </p>
-          <div style={styles.tagContainer}>
-            <span style={{ ...styles.tag, background: "#a855f7" }}>
-              View Cart
-            </span>
-            <span style={{ ...styles.tag, background: "#a855f7" }}>
-              Checkout
-            </span>
-          </div>
-        </div>
-
-        <div
-          style={styles.card}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.borderColor = "#f59e0b";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.borderColor = "#e1e5ebff";
-          }}
-        >
-          <div
-            style={{
-              ...styles.iconBox,
-              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-            }}
-          >
-            <span style={styles.cardIcon}>❤️</span>
-          </div>
-          <h3 style={styles.cardTitle}>Wishlist</h3>
-          <p style={styles.cardDescription}>
-            Save your favorite items for later. Get notified when items go on
-            sale or back in stock.
-          </p>
-          <div style={styles.tagContainer}>
-            <span style={{ ...styles.tag, background: "#f59e0b" }}>
-              My Wishlist
-            </span>
-            <span style={{ ...styles.tag, background: "#f59e0b" }}>
-              Save Items
-            </span>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Additional Features Section */}
       <div style={styles.infoSection}>
-        <div style={styles.infoCard}>
-          <span style={styles.infoIcon}>📍</span>
-          <div>
-            <h4 style={styles.infoTitle}>Order Tracking</h4>
-            <p style={styles.infoText}>
-              Real-time tracking of your orders from warehouse to your doorstep
-            </p>
+        {HOME_INFO_CARDS.map(({ icon, title, text }) => (
+          <div key={title} style={styles.infoCard}>
+            <span style={styles.infoIcon}>{icon}</span>
+            <div>
+              <h4 style={styles.infoTitle}>{title}</h4>
+              <p style={styles.infoText}>{text}</p>
+            </div>
           </div>
-        </div>
-        <div style={styles.infoCard}>
-          <span style={styles.infoIcon}>💰</span>
-          <div>
-            <h4 style={styles.infoTitle}>Payment Options</h4>
-            <p style={styles.infoText}>
-              Multiple payment methods including cards, UPI, wallets, and COD
-            </p>
-          </div>
-        </div>
-        <div style={styles.infoCard}>
-          <span style={styles.infoIcon}>👤</span>
-          <div>
-            <h4 style={styles.infoTitle}>Profile & Addresses</h4>
-            <p style={styles.infoText}>
-              Manage your personal info, saved addresses, and payment methods
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Order Status Section */}
       <div style={styles.statusSection}>
         <h3 style={styles.sectionTitle}>Understanding Order Status</h3>
         <div style={styles.statusGrid}>
-          <div style={styles.statusCard}>
-            <div style={{ ...styles.statusIcon, background: "#3b82f6" }}>
-              📋
+          {HOME_STATUS_CARDS.map(({ icon, title, text, color }) => (
+            <div key={title} style={styles.statusCard}>
+              <div style={{ ...styles.statusIcon, background: color }}>{icon}</div>
+              <h4 style={styles.statusTitle}>{title}</h4>
+              <p style={styles.statusText}>{text}</p>
             </div>
-            <h4 style={styles.statusTitle}>Order Placed</h4>
-            <p style={styles.statusText}>
-              Your order has been received and is being processed
-            </p>
-          </div>
-          <div style={styles.statusCard}>
-            <div style={{ ...styles.statusIcon, background: "#f59e0b" }}>
-              📦
-            </div>
-            <h4 style={styles.statusTitle}>Packed</h4>
-            <p style={styles.statusText}>
-              Your items are packed and ready for shipment
-            </p>
-          </div>
-          <div style={styles.statusCard}>
-            <div style={{ ...styles.statusIcon, background: "#a855f7" }}>
-              🚚
-            </div>
-            <h4 style={styles.statusTitle}>Shipped</h4>
-            <p style={styles.statusText}>
-              Your order is on the way to your delivery address
-            </p>
-          </div>
-          <div style={styles.statusCard}>
-            <div style={{ ...styles.statusIcon, background: "#10b981" }}>
-              ✅
-            </div>
-            <h4 style={styles.statusTitle}>Delivered</h4>
-            <p style={styles.statusText}>
-              Your order has been successfully delivered
-            </p>
-          </div>
+          ))}
         </div>
       </div>
 

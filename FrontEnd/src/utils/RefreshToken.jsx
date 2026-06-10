@@ -5,7 +5,7 @@ export const refreshAccessToken = async () => {
 
   try {
     const response = await axios.post(
-      "http://localhost:5500/api/users/refresh-token",
+      "http://localhost:3000/api/auth/refresh-token",
       {},
       { withCredentials: true } // ✅ Sends HTTP-only refresh token cookie
     );

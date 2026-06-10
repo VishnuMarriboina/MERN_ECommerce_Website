@@ -3,10 +3,13 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../Redux/slices/AuthSlice";
+import { BREADCRUMB_MAP } from "../DataFolder/orgDashboardData";
 import Sidebar from "../components/Sidebar";
 import ProductManagement from "../components/ProductManagement";
+import GenericProductPanel from "../components/GenericProductPanel";
 import OrderManagement from "../components/OrderManagement";
 import UserManagement from "../components/UserManagement";
+import ContactManagement from "../components/ContactManagement";
 import Footer from "../../Footer";
 import Profile from "../../../components/Profile";
 import AdminHome from "../components/AdminHome";
@@ -29,22 +32,20 @@ export default function AdminDashboard() {
     if (saved) setActiveTab(saved);
   }, []);
 
-  // Breadcrumb mapping
-  const breadcrumbMap = {
-    products: ["Dashboard", "Product Management"],
-    orders: ["Dashboard", "Order Management"],
-    users: ["Dashboard", "User Management"],
-    profile: ["Dashboard", "Profile"],
-  };
+  const breadcrumbMap = BREADCRUMB_MAP;
 
   const renderContent = () => {
     switch (activeTab) {
       case "products":
         return <ProductManagement />;
+      case "catalog":
+        return <GenericProductPanel />;
       case "orders":
         return <OrderManagement />;
       case "users":
         return <UserManagement />;
+      case "contacts":
+        return <ContactManagement />;
       case "profile":
         return <Profile />;
       case "home":

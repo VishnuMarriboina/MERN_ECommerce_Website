@@ -1,0 +1,13 @@
+openapi: 3.0.0
+info:
+  title: Cart Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3003
+paths:
+  /api/cart:
+    get:
+      summary: Get user cart
+  /api/cart/add:
+    post:
+      summary: Add item to cart

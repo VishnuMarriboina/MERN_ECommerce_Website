@@ -3,15 +3,10 @@ import { logoutUser } from "../../../Redux/slices/AuthSlice";
 import { persistor } from "../../../Redux/Store";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { SIDEBAR_TABS } from "../DataFolder/orgDashboardData";
 
 export default function Sidebar({ activeTab, setActiveTab }) {
-  const tabs = [
-    { key: "home", label: "Home", icon: "🏠" },
-    { key: "products", label: "Products", icon: "📦" },
-    { key: "orders", label: "Orders", icon: "🛒" },
-    { key: "users", label: "Users", icon: "👥" },
-    { key: "profile", label: "Profile", icon: "👤" },
-  ];
+  const tabs = SIDEBAR_TABS;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

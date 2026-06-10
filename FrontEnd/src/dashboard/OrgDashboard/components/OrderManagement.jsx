@@ -5,6 +5,43 @@ import {
   updateOrderStatus,
 } from "../../../Redux/slices/OrderSlice";
 import CustomModal from "../../../components/CustomModal";
+import {
+  ORDER_STATUS_STEPS as STATUS_STEPS,
+  ORDER_FILTER_OPTIONS,
+} from "../DataFolder/orgDashboardData";
+
+/* ─── SVG Icons ───────────────────────────────────────────────────── */
+const EyeIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const SearchIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const ArrowRightIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/>
+    <polyline points="12 5 19 12 12 19"/>
+  </svg>
+);
+const PencilIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+
 
 export default function OrderManagement() {
   const dispatch = useDispatch();
@@ -46,7 +83,7 @@ export default function OrderManagement() {
   const updateStatus = async (newStatus) => {
     try {
       const res = await dispatch(
-        updateOrderStatus(selectedOrder._id, newStatus)
+        updateOrderStatus({ orderId: selectedOrder._id, status: newStatus })
       );
 
       // Always re-fetch
@@ -107,24 +144,27 @@ export default function OrderManagement() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    const datePart = date.toLocaleDateString("en-GB", {
       year: "numeric",
       month: "short",
       day: "numeric",
+    });
+    const timePart = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+    return { datePart, timePart };
   };
 
   const getStatusStyle = (status) => {
     const statusStyles = {
-      Confirmed: styles.statusConfirmed,
-      Pending: styles.statusPending,
-      Shipped: styles.statusShipped,
-      Delivered: styles.statusDelivered,
-      Cancelled: styles.statusCancelled,
+      Confirmed: S.statusConfirmed,
+      Pending: S.statusPending,
+      Shipped: S.statusShipped,
+      Delivered: S.statusDelivered,
+      Cancelled: S.statusCancelled,
     };
-    return statusStyles[status] || styles.statusPending;
+    return statusStyles[status] || S.statusPending;
   };
 
   const openOrderDetails = (order) => {
@@ -139,53 +179,54 @@ export default function OrderManagement() {
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p>Loading orders...</p>
+      <div style={S.loadingContainer}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={S.spinner}></div>
+        <p style={{ color: "#475569", fontSize: 14, margin: 0 }}>Loading orders…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={styles.errorContainer}>
-        <p style={styles.errorText}>Error: {error}</p>
+      <div style={S.loadingContainer}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p style={{ color: "#ef4444", fontSize: 14, margin: 0 }}>Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.contentHeader}>
-        <h1 style={styles.pageTitle}>Order Management</h1>
-        <div style={styles.statsContainer}>
-          <div style={styles.statCard}>
-            <span style={styles.statLabel}>Total Orders</span>
-            <span style={styles.statValue}>{orders.length}</span>
+    <div style={S.container}>
+
+      {/* ── Page Header ── */}
+      <div style={S.pageHeader}>
+        <div>
+          <h1 style={S.pageTitle}>Order Management</h1>
+          <p style={S.pageSubtitle}>Track and manage all customer orders</p>
+        </div>
+        <div style={S.statsRow}>
+          <div style={S.statChip}>
+            <span style={S.statChipLabel}>Total Orders</span>
+            <span style={S.statChipValue}>{orders.length}</span>
           </div>
-          <div style={styles.statCard}>
-            <span style={styles.statLabel}>Total Revenue</span>
-            <span style={styles.statValue}>₹ {totalRevenue}</span>
+          <div style={S.statChip}>
+            <span style={S.statChipLabel}>Revenue</span>
+            <span style={S.statChipValue}>
+              ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Status Filter */}
-      <div style={styles.filterContainer}>
-        {[
-          "All",
-          "Pending",
-          "Confirmed",
-          "Shipped",
-          "Delivered",
-          "Cancelled",
-        ].map((status) => (
+      {/* ── Status Filter Toolbar ── */}
+      <div style={S.filterBar}>
+        {ORDER_FILTER_OPTIONS.map((status) => (
           <button
             key={status}
-            style={{
-              ...styles.filterBtn,
-              ...(statusFilter === status && styles.filterBtnActive),
-            }}
+            style={statusFilter === status ? S.filterPillActive : S.filterPill}
             onClick={() => setStatusFilter(status)}
           >
             {status}
@@ -193,212 +234,221 @@ export default function OrderManagement() {
         ))}
       </div>
 
-      {/* Orders Table */}
-      <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tableHeader}>
-              <th style={styles.th}>Order ID</th>
-              <th style={styles.th}>Customer</th>
-              <th style={styles.th}>Items</th>
-              <th style={styles.th}>Amount</th>
-              <th style={styles.th}>Payment</th>
-              <th style={styles.th}>Date</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.length === 0 ? (
-              <tr>
-                <td
-                  colSpan="8"
-                  style={{ ...styles.td, textAlign: "center", padding: "2rem" }}
-                >
-                  No orders found
-                </td>
+      {/* ── Table Card ── */}
+      <div style={S.tableCard}>
+        <div style={S.tableWrapper}>
+          <table style={S.table}>
+            <thead>
+              <tr style={S.tableHeadRow}>
+                {["ORDER ID", "CUSTOMER", "ITEMS", "AMOUNT", "PAYMENT", "DATE", "STATUS", "ACTIONS"].map((col) => (
+                  <th key={col} style={S.th}>{col}</th>
+                ))}
               </tr>
-            ) : (
-              filteredOrders.map((order) => (
-                <tr key={order._id} style={styles.tableRow}>
-                  <td style={styles.td}>
-                    <span style={styles.orderId}>
-                      {order._id?.slice(-8).toUpperCase()}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    {order.userId?.slice(-8).toUpperCase() || "N/A"}
-                  </td>
-                  <td style={styles.td}>{order.items?.length || 0}</td>
-                  <td style={styles.td}>
-                    <span style={styles.amount}>
-                      ₹{order.totalAmount?.toFixed(2)}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <div style={styles.paymentInfo}>
-                      <span>{order.paymentType}</span>
-                      {order.paymentMode && (
-                        <span style={styles.paymentMode}>
-                          ({order.paymentMode})
-                        </span>
-                      )}
+            </thead>
+            <tbody>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={S.emptyCell}>
+                    <div style={S.emptyState}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                      </svg>
+                      <p style={S.emptyTitle}>No orders found</p>
+                      <p style={S.emptySubtitle}>Try adjusting the status filter above</p>
                     </div>
                   </td>
-                  <td style={styles.td}>{formatDate(order.orderedDate)}</td>
-
-                  <td style={styles.td}>
-                    <span
-                      style={{
-                        ...getStatusStyle(order.status),
-                        ...styles.statusClickable,
-                      }}
-                      onClick={() => openStatusModal(order)}
-                      onMouseEnter={(e) => {
-                        Object.assign(
-                          e.target.style,
-                          styles.statusClickableHover
-                        );
-                      }}
-                      onMouseLeave={(e) => {
-                        Object.assign(e.target.style, {
-                          backgroundColor: getStatusStyle(order.status)
-                            .backgroundColor,
-                        });
-                      }}
-                    >
-                      {order.status}
-                      <span
-                        style={{
-                          fontSize: "1rem",
-                          marginLeft: "5px",
-                          opacity: 0.7,
-                        }}
-                      >
-                        ✏️
-                      </span>
-                    </span>
-                  </td>
-
-                  <td style={styles.td}>
-                    <button
-                      style={styles.viewBtn}
-                      onClick={() => openOrderDetails(order)}
-                    >
-                      View Details
-                    </button>
-                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredOrders.map((order) => {
+                  const { datePart, timePart } = formatDate(order.orderedDate);
+                  return (
+                    <tr
+                      key={order._id}
+                      style={S.tableRow}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      {/* Order ID */}
+                      <td style={S.td}>
+                        <span style={S.orderId}>
+                          #{order._id?.slice(-8).toUpperCase()}
+                        </span>
+                      </td>
+
+                      {/* Customer */}
+                      <td style={S.td}>
+                        <span style={S.customerChip}>
+                          {order.userId?.slice(-8).toUpperCase() || "N/A"}
+                        </span>
+                      </td>
+
+                      {/* Items */}
+                      <td style={S.td}>
+                        <span style={S.itemsPill}>
+                          {order.items?.length || 0} items
+                        </span>
+                      </td>
+
+                      {/* Amount */}
+                      <td style={S.td}>
+                        <span style={S.amount}>₹{order.totalAmount?.toFixed(2)}</span>
+                      </td>
+
+                      {/* Payment */}
+                      <td style={S.td}>
+                        <div style={S.paymentCell}>
+                          <span style={S.paymentType}>{order.paymentType}</span>
+                          {order.paymentMode && (
+                            <span style={S.paymentMode}>{order.paymentMode}</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Date */}
+                      <td style={S.td}>
+                        <div style={S.dateCell}>
+                          <span style={S.dateMain}>{datePart}</span>
+                          <span style={S.dateTime}>{timePart}</span>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td style={S.td}>
+                        <span
+                          style={{ ...getStatusStyle(order.status), ...S.statusClickable }}
+                          onClick={() => openStatusModal(order)}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.82")}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                        >
+                          {order.status}
+                          <span style={{ display: "inline-flex", marginLeft: 5, opacity: 0.7 }}>
+                            <PencilIcon />
+                          </span>
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td style={S.td}>
+                        <button
+                          style={S.eyeBtn}
+                          onClick={() => openOrderDetails(order)}
+                          title="View details"
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dbeafe")}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#eff6ff")}
+                        >
+                          <EyeIcon />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Order Details Modal */}
+      {/* ── Order Details Modal ── */}
       {showModal && selectedOrder && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Order Details</h2>
-              <button style={styles.closeBtn} onClick={closeModal}>
-                ×
-              </button>
-            </div>
-            <div style={styles.modalBody}>
-              {/* Order Info */}
-              <div style={styles.modalSection}>
-                <h3 style={styles.sectionTitle}>Order Information</h3>
-                <div style={styles.infoGrid}>
-                  <div style={styles.infoItem}>
-                    <span style={styles.infoLabel}>Order ID:</span>
-                    <span style={styles.infoValue}>{selectedOrder._id}</span>
-                  </div>
-                  <div style={styles.infoItem}>
-                    <span style={styles.infoLabel}>Customer ID:</span>
-                    <span style={styles.infoValue}>{selectedOrder.userId}</span>
-                  </div>
-                  <div style={styles.infoItem}>
-                    <span style={styles.infoLabel}>Status:</span>
+        <div style={S.overlay} onClick={closeModal}>
+          <div style={{ ...S.modal, maxWidth: 700 }} onClick={(e) => e.stopPropagation()}>
 
-                    <span style={getStatusStyle(selectedOrder.status)}>
-                      {selectedOrder.status}
+            {/* Modal Header */}
+            <div style={S.modalHeader}>
+              <div>
+                <h2 style={S.modalTitle}>Order Details</h2>
+                <p style={S.modalRef}>#{selectedOrder._id?.slice(-8).toUpperCase()}</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={getStatusStyle(selectedOrder.status)}>{selectedOrder.status}</span>
+                <button style={S.closeBtnCircle} onClick={closeModal}><CloseIcon /></button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={S.modalBody}>
+
+              {/* Section 1: Order Information */}
+              <div style={S.section}>
+                <p style={S.sectionTitle}>Order Information</p>
+                <div style={S.infoGrid}>
+                  <div style={S.infoItem}>
+                    <span style={S.infoLabel}>Order ID</span>
+                    <span style={S.infoValue}>{selectedOrder._id}</span>
+                  </div>
+                  <div style={S.infoItem}>
+                    <span style={S.infoLabel}>Customer ID</span>
+                    <span style={S.infoValue}>{selectedOrder.userId}</span>
+                  </div>
+                  <div style={S.infoItem}>
+                    <span style={S.infoLabel}>Status</span>
+                    <span style={getStatusStyle(selectedOrder.status)}>{selectedOrder.status}</span>
+                  </div>
+                  <div style={S.infoItem}>
+                    <span style={S.infoLabel}>Date</span>
+                    <span style={S.infoValue}>
+                      {formatDate(selectedOrder.orderedDate).datePart} · {formatDate(selectedOrder.orderedDate).timePart}
                     </span>
                   </div>
-                  <div style={styles.infoItem}>
-                    <span style={styles.infoLabel}>Order Date:</span>
-                    <span style={styles.infoValue}>
-                      {formatDate(selectedOrder.orderedDate)}
-                    </span>
-                  </div>
-                  <div style={styles.infoItem}>
-                    <span style={styles.infoLabel}>Payment Type:</span>
-                    <span style={styles.infoValue}>
-                      {selectedOrder.paymentType}
-                    </span>
+                  <div style={S.infoItem}>
+                    <span style={S.infoLabel}>Payment Type</span>
+                    <span style={S.infoValue}>{selectedOrder.paymentType}</span>
                   </div>
                   {selectedOrder.paymentMode && (
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}>Payment Mode:</span>
-                      <span style={styles.infoValue}>
-                        {selectedOrder.paymentMode}
-                      </span>
+                    <div style={S.infoItem}>
+                      <span style={S.infoLabel}>Payment Mode</span>
+                      <span style={S.infoValue}>{selectedOrder.paymentMode}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Order Items */}
-              <div style={styles.modalSection}>
-                <h3 style={styles.sectionTitle}>
-                  Order Items ({selectedOrder.items?.length || 0})
-                </h3>
-                <div style={styles.itemsList}>
+              {/* Section 2: Items */}
+              <div style={S.section}>
+                <p style={S.sectionTitle}>Items ({selectedOrder.items?.length || 0})</p>
+                <div style={S.itemsList}>
                   {selectedOrder.items?.map((item, index) => {
                     const details = item.details || {};
                     return (
-                      <div key={item._id || index} style={styles.itemCardOuter}>
-                        <span style={{ ...styles.itemCat, display: "block" }}>
-                          category : {item.productModel?.toUpperCase()}
-                        </span>
+                      <div key={item._id || index} style={S.itemCard}>
+                        {/* Category badge */}
+                        <span style={S.itemCatBadge}>{item.productModel?.toUpperCase()}</span>
 
-                        <div key={item._id || index} style={styles.itemCard}>
-                          <div style={styles.itemHeader}>
-                            <span style={styles.itemBrand}>
-                              {details.brand || item.productModel || "Product"}
-                            </span>
-                            <span style={styles.itemPrice}>₹{item.price}</span>
+                        {/* Brand + Price */}
+                        <div style={S.itemHeader}>
+                          <span style={S.itemBrand}>{details.brand || item.productModel || "Product"}</span>
+                          <span style={S.itemPrice}>₹{item.price}</span>
+                        </div>
+
+                        {/* Variant badges */}
+                        {details.size && details.color && details.fit && (
+                          <div style={S.variantBadges}>
+                            <span style={S.variantBadge}>Size: {details.size}</span>
+                            <span style={S.variantBadge}>Color: {details.color}</span>
+                            <span style={S.variantBadge}>Fit: {details.fit}</span>
                           </div>
+                        )}
 
-                          {details.size && details.color && details.fit && (
-                            <div style={styles.variantBadges}>
-                              <span style={styles.badge}>
-                                Size: {details.size}
-                              </span>
-                              <span style={styles.badge}>
-                                Color: {details.color}
-                              </span>
-                              <span style={styles.badge}>
-                                Fit: {details.fit}
-                              </span>
+                        {/* Details grid */}
+                        <div style={S.itemDetailsGrid}>
+                          <div style={S.itemDetailCell}>
+                            <span style={S.itemDetailLabel}>Product ID</span>
+                            <span style={S.itemDetailValue}>{item.productId?.slice(-8).toUpperCase()}</span>
+                          </div>
+                          {item.variantId && (
+                            <div style={S.itemDetailCell}>
+                              <span style={S.itemDetailLabel}>Variant ID</span>
+                              <span style={S.itemDetailValue}>{item.variantId?.slice(-8).toUpperCase()}</span>
                             </div>
                           )}
-
-                          <div style={styles.itemDetails}>
-                            <span>
-                              Product ID:{" "}
-                              {item.productId?.slice(-8).toUpperCase()}
-                            </span>
-                            {item.variantId && (
-                              <span>
-                                Variant ID:{" "}
-                                {item.variantId?.slice(-8).toUpperCase()}
-                              </span>
-                            )}
-                            <span>Quantity: {item.quantity}</span>
-                            <span style={styles.itemSubtotal}>
-                              Subtotal: ₹
-                              {(item.price * item.quantity).toFixed(2)}
+                          <div style={S.itemDetailCell}>
+                            <span style={S.itemDetailLabel}>Qty</span>
+                            <span style={S.itemDetailValue}>{item.quantity}</span>
+                          </div>
+                          <div style={S.itemDetailCell}>
+                            <span style={S.itemDetailLabel}>Subtotal</span>
+                            <span style={{ ...S.itemDetailValue, color: "#10b981", fontWeight: 700 }}>
+                              ₹{(item.price * item.quantity).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -408,141 +458,158 @@ export default function OrderManagement() {
                 </div>
               </div>
 
-              {/* Total */}
-              <div style={styles.totalSection}>
-                <span style={styles.totalLabel}>Total Amount:</span>
-                <span style={styles.totalValue}>
-                  ₹{selectedOrder.totalAmount?.toFixed(2)}
-                </span>
+              {/* Total Row */}
+              <div style={S.totalRow}>
+                <span style={S.totalLabel}>Total Amount</span>
+                <span style={S.totalValue}>₹{selectedOrder.totalAmount?.toFixed(2)}</span>
               </div>
             </div>
 
-            <div style={styles.modalFooter}>
-              <button style={styles.closeModalBtn} onClick={closeModal}>
-                Close
-              </button>
+            {/* Modal Footer */}
+            <div style={S.modalFooter}>
+              <button style={S.closeModalBtn} onClick={closeModal}>Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Show Status Modal */}
-
+      {/* ── Status Update Modal ── */}
       {showStatusModal && selectedOrder && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Update Order Status</h2>
-              <button
-                style={styles.closeBtn}
-                onClick={() => setShowStatusModal(false)}
-              >
-                ×
+        <div style={S.overlay}>
+          <div style={{ ...S.modal, maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={S.modalHeader}>
+              <h2 style={S.modalTitle}>Update Order Status</h2>
+              <button style={S.closeBtnCircle} onClick={() => setShowStatusModal(false)}>
+                <CloseIcon />
               </button>
             </div>
-            <div style={styles.modalBody}>
-              {selectedOrder.history && selectedOrder.history.length > 0 && (
-                <div style={styles.historySection}>
-                  <h4 style={styles.historySectionTitle}>Order History</h4>
-                  <div style={styles.historyTimeline}>
-                    {selectedOrder.history.map((hist, idx) => (
-                      <div key={hist._id || idx} style={styles.historyItem}>
-                        <div style={styles.historyDot}></div>
-                        <div style={styles.historyContent}>
-                          <div style={styles.historyText}>
-                            <span style={styles.historyFrom}>{hist.from}</span>
-                            <span style={styles.historyArrow}>→</span>
-                            <span style={styles.historyTo}>{hist.to}</span>
+
+            {/* Body */}
+            <div style={S.modalBody}>
+
+              {/* Progress bar (non-cancelled) */}
+              {selectedOrder.status !== "Cancelled" ? (
+                <div style={S.progressContainer}>
+                  {STATUS_STEPS.map((step, idx) => {
+                    const currentIdx = STATUS_STEPS.indexOf(selectedOrder.status);
+                    const isCompleted = idx < currentIdx;
+                    const isCurrent = idx === currentIdx;
+                    return (
+                      <React.Fragment key={step}>
+                        <div style={S.progressStep}>
+                          <div style={{
+                            ...S.progressCircle,
+                            backgroundColor: isCompleted ? "#10b981" : isCurrent ? "#6366f1" : "#f1f5f9",
+                            color: (isCompleted || isCurrent) ? "#fff" : "#94a3b8",
+                          }}>
+                            {isCompleted ? (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            ) : (
+                              <span style={{ fontSize: 11, fontWeight: 700 }}>{idx + 1}</span>
+                            )}
                           </div>
-                          <div style={styles.historyDate}>
-                            {formatDate(hist.changedAt)}
+                          <span style={{
+                            ...S.progressLabel,
+                            color: isCurrent ? "#4338ca" : isCompleted ? "#10b981" : "#94a3b8",
+                            fontWeight: isCurrent ? 700 : 500,
+                          }}>
+                            {step}
+                          </span>
+                        </div>
+                        {idx < STATUS_STEPS.length - 1 && (
+                          <div style={{
+                            ...S.progressLine,
+                            backgroundColor: idx < currentIdx ? "#10b981" : "#e2e8f0",
+                          }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={S.cancelledBanner}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#be123c" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  <span>This order has been cancelled</span>
+                </div>
+              )}
+
+              {/* History */}
+              {selectedOrder.history && selectedOrder.history.length > 0 && (
+                <div style={S.historySection}>
+                  <p style={S.historySectionTitle}>Status History</p>
+                  <div style={S.historyTimeline}>
+                    {selectedOrder.history.map((hist, idx) => {
+                      const { datePart, timePart } = formatDate(hist.changedAt);
+                      return (
+                        <div key={hist._id || idx} style={S.historyItem}>
+                          <div style={S.historyDot}></div>
+                          <div style={S.historyContent}>
+                            <div style={S.historyText}>
+                              <span style={S.historyFrom}>{hist.from}</span>
+                              <span style={S.historyArrow}>
+                                <ArrowRightIcon />
+                              </span>
+                              <span style={S.historyTo}>{hist.to}</span>
+                            </div>
+                            <div style={S.historyDate}>{datePart} · {timePart}</div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              <div style={styles.modalSection}>
-                {/* Status Row */}
-                <div style={styles.statusRow}>
-                  <div style={styles.statusValueBox}>
-                    <span style={styles.infoLabel}>Order Status:</span>
-                    <span style={styles.infoValue}>{selectedOrder.status}</span>
-                  </div>
-                  {/* Next Step Button */}
+              {/* Action row */}
+              <div style={S.statusActionRow}>
+                <div style={S.statusActionLeft}>
+                  <span style={S.infoLabel}>Current Status</span>
+                  <span style={getStatusStyle(selectedOrder.status)}>{selectedOrder.status}</span>
+                </div>
+                <div>
                   {statusFlow[selectedOrder?.status] ? (
                     <button
-                      style={styles.modalActionBtn}
-                      onMouseEnter={(e) =>
-                        Object.assign(e.target.style, {
-                          ...styles.statusBtnHover,
-                          transform: "scale(1.05)", // if your hover has scale
-                        })
-                      }
-                      onMouseLeave={(e) =>
-                        Object.assign(e.target.style, {
-                          ...styles.modalActionBtn,
-                          transform: "scale(1)",
-                        })
-                      }
-                      onClick={() =>
-                        updateStatus(statusFlow[selectedOrder.status])
-                      }
+                      style={S.markAsBtn}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#4f46e5")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#6366f1")}
+                      onClick={() => updateStatus(statusFlow[selectedOrder.status])}
                     >
                       Mark as {statusFlow[selectedOrder.status]}
                     </button>
                   ) : (
-                    <p
-                      style={{
-                        fontWeight: 600,
-                        color:
-                          selectedOrder.status === "Delivered"
-                            ? "#16a34a" // green
-                            : selectedOrder.status === "Cancelled"
-                            ? "#dc2626" // red
-                            : "#475569", // neutral
-                      }}
-                    >
-                      {selectedOrder?.status === "Delivered" &&
-                        "Your order has been successfully delivered."}
-
-                      {selectedOrder?.status === "Cancelled" &&
-                        "Your order has been cancelled."}
+                    <p style={{
+                      fontWeight: 600,
+                      fontSize: 14,
+                      margin: 0,
+                      color: selectedOrder.status === "Delivered" ? "#15803d"
+                        : selectedOrder.status === "Cancelled" ? "#be123c"
+                        : "#475569",
+                    }}>
+                      {selectedOrder.status === "Delivered" && "Order successfully delivered."}
+                      {selectedOrder.status === "Cancelled" && "Order has been cancelled."}
                     </p>
                   )}
                 </div>
-
-                {/* Cancel Order Button */}
-                {selectedOrder.status !== "Delivered" &&
-                  selectedOrder.status !== "Cancelled" && (
-                    <button
-                      style={styles.cancelOrderBtn}
-                      onMouseEnter={(e) => {
-                        Object.assign(e.target.style, {
-                          ...styles.statusBtnHover,
-                          transform: "scale(1.05)", // if your hover has scale
-                        });
-                      }}
-                      onMouseLeave={(e) => {
-                        Object.assign(e.target.style, {
-                          ...styles.cancelOrderBtn,
-                          transform: "scale(1)", // reset back!
-                        });
-                      }}
-                      onClick={() => updateStatus("Cancelled")}
-                    >
-                      Cancel Order
-                    </button>
-                  )}
               </div>
+
+              {/* Cancel order button */}
+              {selectedOrder.status !== "Delivered" && selectedOrder.status !== "Cancelled" && (
+                <button
+                  style={S.cancelOrderBtn}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
+                  onClick={() => updateStatus("Cancelled")}
+                >
+                  Cancel Order
+                </button>
+              )}
             </div>
-            <div style={styles.modalFooter}>
-              <button
-                style={styles.closeModalBtn}
-                onClick={() => setShowStatusModal(false)}
-              >
+
+            {/* Footer */}
+            <div style={S.modalFooter}>
+              <button style={S.closeModalBtn} onClick={() => setShowStatusModal(false)}>
                 Close
               </button>
             </div>
@@ -561,552 +628,687 @@ export default function OrderManagement() {
   );
 }
 
-const styles = {
+/* ─── Styles ─────────────────────────────────────────────────────── */
+const S = {
   container: {
-    padding: "2rem",
-    backgroundColor: "#f7fafc",
+    padding: "28px 32px",
+    backgroundColor: "#f8fafc",
     minHeight: "100vh",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
+
+  /* Loading / Error */
   loadingContainer: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     minHeight: "60vh",
-    gap: "1rem",
+    gap: 12,
   },
   spinner: {
-    width: "50px",
-    height: "50px",
-    border: "5px solid #e2e8f0",
-    borderTop: "5px solid #667eea",
+    width: 36,
+    height: 36,
+    border: "3px solid #e2e8f0",
+    borderTopColor: "#6366f1",
     borderRadius: "50%",
-    animation: "spin 1s linear infinite",
+    animation: "spin 0.8s linear infinite",
   },
-  errorContainer: {
-    padding: "2rem",
-    textAlign: "center",
-  },
-  errorText: {
-    color: "#f56565",
-    fontSize: "1.1rem",
-  },
-  contentHeader: {
+
+  /* Page Header */
+  pageHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "2rem",
+    alignItems: "flex-start",
+    marginBottom: 24,
     flexWrap: "wrap",
-    gap: "1rem",
+    gap: 16,
   },
   pageTitle: {
-    fontSize: "1.8rem",
-    fontWeight: "700",
-    color: "#2d3748",
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#0f172a",
     margin: 0,
+    lineHeight: 1.3,
   },
-  statsContainer: {
+  pageSubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    margin: "4px 0 0 0",
+  },
+  statsRow: {
     display: "flex",
-    gap: "1rem",
+    gap: 10,
+    flexWrap: "wrap",
   },
-  statCard: {
-    backgroundColor: "white",
-    padding: "1rem 1.5rem",
-    borderRadius: "8px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  statChip: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.5rem",
-  },
-  statLabel: {
-    fontSize: "0.85rem",
-    color: "#718096",
-    fontWeight: "500",
-  },
-  statValue: {
-    fontSize: "1.5rem",
-    fontWeight: "700",
-    color: "#2d3748",
-  },
-  filterContainer: {
-    display: "flex",
-    gap: "0.75rem",
-    marginBottom: "2rem",
-
-    overflowX: "auto",
-  },
-  filterBtn: {
-    padding: "0.5rem 1.25rem",
-    border: "2px solid #e2e8f0",
+    alignItems: "flex-end",
     backgroundColor: "#fff",
-    color: "#4a5568",
-    borderRadius: "20px",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-    transition: "all 0.2s",
+    border: "1px solid #f1f5f9",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+    borderRadius: 10,
+    padding: "10px 16px",
+    minWidth: 110,
   },
-  filterBtnActive: {
-    backgroundColor: "#667eea",
-    color: "#fff",
-    // borderColor: "#667eea",
+  statChipLabel: {
+    fontSize: 11,
+    color: "#94a3b8",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
   },
-  searchContainer: {
+  statChipValue: {
+    fontSize: 17,
+    fontWeight: 700,
+    color: "#0f172a",
+    marginTop: 2,
+  },
+
+  /* Filter Bar */
+  filterBar: {
     display: "flex",
-    gap: "1rem",
-    marginBottom: "2rem",
-    flexWrap: "wrap",
-    alignItems: "center",
+    gap: 8,
+    marginBottom: 20,
+    overflowX: "auto",
+    paddingBottom: 2,
   },
-  searchInput: {
-    flex: 1,
-    minWidth: "250px",
-    padding: "0.75rem 1rem",
-    border: "2px solid #e2e8f0",
-    borderRadius: "8px",
-    fontSize: "0.95rem",
+  filterPill: {
+    padding: "6px 16px",
+    border: "1.5px solid #e2e8f0",
+    backgroundColor: "#fff",
+    color: "#64748b",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+    outline: "none",
+    transition: "all 0.15s",
+  },
+  filterPillActive: {
+    padding: "6px 16px",
+    border: "1.5px solid #6366f1",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 600,
+    whiteSpace: "nowrap",
     outline: "none",
   },
-  roleFilters: {
-    display: "flex",
-    gap: "0.5rem",
-  },
-  tableContainer: {
+
+  /* Table Card */
+  tableCard: {
     backgroundColor: "#fff",
-    borderRadius: "12px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    borderRadius: 14,
+    border: "1px solid #f1f5f9",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
     overflow: "hidden",
+  },
+  tableWrapper: {
     overflowX: "auto",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
   },
-  tableHeader: {
-    backgroundColor: "#f7fafc",
+  tableHeadRow: {
+    backgroundColor: "#f8fafc",
+    borderBottom: "1px solid #f1f5f9",
   },
   th: {
-    padding: "1rem",
+    padding: "12px 16px",
     textAlign: "left",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-    color: "#4a5568",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
+    letterSpacing: "0.6px",
+    whiteSpace: "nowrap",
   },
   tableRow: {
-    borderBottom: "1px solid #e2e8f0",
-    transition: "background 0.2s",
+    borderBottom: "1px solid #f8fafc",
+    transition: "background 0.12s",
+    cursor: "default",
   },
   td: {
-    padding: "1rem",
-    fontSize: "0.95rem",
-    color: "#2d3748",
+    padding: "12px 16px",
+    fontSize: 13,
+    color: "#0f172a",
+    verticalAlign: "middle",
   },
+
+  /* Cell styles */
   orderId: {
     fontFamily: "monospace",
-    fontWeight: "600",
-    color: "#667eea",
+    fontWeight: 600,
+    fontSize: 13,
+    color: "#6366f1",
+    letterSpacing: "0.3px",
   },
-  userId: {
+  customerChip: {
     fontFamily: "monospace",
-    fontSize: "0.85rem",
-    color: "#718096",
+    fontSize: 11,
+    color: "#94a3b8",
+    letterSpacing: "0.3px",
   },
-  userName: {
-    fontWeight: "600",
-    color: "#2d3748",
+  itemsPill: {
+    display: "inline-block",
+    padding: "3px 10px",
+    backgroundColor: "#f1f5f9",
+    color: "#475569",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 500,
   },
   amount: {
-    fontWeight: "700",
-    color: "#48bb78",
+    fontWeight: 700,
+    color: "#0f172a",
+    fontSize: 13,
   },
-  paymentInfo: {
+  paymentCell: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.25rem",
+    gap: 2,
+  },
+  paymentType: {
+    fontSize: 13,
+    color: "#0f172a",
+    fontWeight: 500,
   },
   paymentMode: {
-    fontSize: "0.85rem",
-    color: "#718096",
+    fontSize: 11,
+    color: "#94a3b8",
   },
-  statusConfirmed: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#c6f6d5",
-    color: "#2f855a",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+  dateCell: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 1,
   },
-  statusShipped: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#bee3f8",
-    color: "#2c5282",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+  dateMain: {
+    fontSize: 13,
+    color: "#0f172a",
+  },
+  dateTime: {
+    fontSize: 11,
+    color: "#94a3b8",
+  },
+
+  /* Status badges */
+  statusClickable: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    cursor: "pointer",
+    padding: "4px 10px",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 600,
+    transition: "opacity 0.15s",
+    userSelect: "none",
   },
   statusPending: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#feebc8",
-    color: "#c05621",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+    padding: "4px 10px",
+    backgroundColor: "#fff7ed",
+    color: "#c2410c",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 600,
+  },
+  statusConfirmed: {
+    padding: "4px 10px",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 600,
+  },
+  statusShipped: {
+    padding: "4px 10px",
+    backgroundColor: "#eff6ff",
+    color: "#1d4ed8",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 600,
   },
   statusDelivered: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#b2f5ea",
-    color: "#234e52",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+    padding: "4px 10px",
+    backgroundColor: "#dcfce7",
+    color: "#15803d",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 600,
   },
   statusCancelled: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#fed7d7",
-    color: "#c53030",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+    padding: "4px 10px",
+    backgroundColor: "#fff1f2",
+    color: "#be123c",
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 600,
   },
-  roleAdmin: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#fbb6ce",
-    color: "#97266d",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  roleUser: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#e6fffa",
-    color: "#234e52",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  viewBtn: {
-    padding: "0.5rem 1rem",
-    backgroundColor: "#667eea",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
+
+  /* Eye button */
+  eyeBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 30,
+    height: 30,
+    border: "1.5px solid #bfdbfe",
+    backgroundColor: "#eff6ff",
+    color: "#2563eb",
+    borderRadius: 7,
     cursor: "pointer",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-    transition: "all 0.2s",
+    transition: "background 0.15s",
+    outline: "none",
   },
-  modalOverlay: {
+
+  /* Empty state */
+  emptyCell: {
+    padding: "48px 16px",
+    textAlign: "center",
+  },
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#475569",
+    margin: 0,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    margin: 0,
+  },
+
+  /* Modal overlay */
+  overlay: {
     position: "fixed",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(15,23,42,0.5)",
+    backdropFilter: "blur(3px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    padding: "1rem",
+    padding: 16,
   },
   modal: {
     backgroundColor: "#fff",
-    borderRadius: "12px",
-    width: "90%",
-    maxWidth: "800px",
+    borderRadius: 16,
+    width: "95%",
     maxHeight: "90vh",
     display: "flex",
     flexDirection: "column",
-    boxShadow: "0 20px 25px rgba(0,0,0,0.15)",
+    boxShadow: "0 20px 60px rgba(15,23,42,0.18)",
+    overflow: "hidden",
   },
   modalHeader: {
-    padding: "1.5rem",
-    borderBottom: "1px solid #e2e8f0",
+    padding: "20px 24px",
+    borderBottom: "1px solid #f1f5f9",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    flexShrink: 0,
   },
   modalTitle: {
-    fontSize: "1.5rem",
-    fontWeight: "700",
-    color: "#2d3748",
+    fontSize: 17,
+    fontWeight: 700,
+    color: "#0f172a",
     margin: 0,
   },
-  closeBtn: {
-    border: "none",
-    backgroundColor: "transparent",
+  modalRef: {
+    fontSize: 12,
+    color: "#94a3b8",
+    margin: "3px 0 0 0",
+    fontFamily: "monospace",
+  },
+  closeBtnCircle: {
+    width: 32,
+    height: 32,
+    border: "1px solid #e2e8f0",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
     cursor: "pointer",
-    color: "#718096",
-    fontSize: "2rem",
-    width: "40px",
-    height: "40px",
-    display: "flex",
+    display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
+    color: "#475569",
+    outline: "none",
+    flexShrink: 0,
   },
   modalBody: {
-    padding: "1.5rem",
+    padding: "20px 24px",
     overflowY: "auto",
     flex: 1,
   },
-  modalSection: {
-    marginBottom: "2rem",
-    marginTop: "1rem",
+  modalFooter: {
+    padding: "16px 24px",
+    borderTop: "1px solid #f1f5f9",
+    display: "flex",
+    justifyContent: "flex-end",
+    flexShrink: 0,
+  },
+  closeModalBtn: {
+    padding: "9px 20px",
+    border: "none",
+    backgroundColor: "#6366f1",
+    color: "#fff",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 600,
+    outline: "none",
+  },
+
+  /* Sections */
+  section: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: "1.1rem",
-    fontWeight: "600",
-    color: "#2d3748",
-    marginBottom: "1rem",
-    borderBottom: "2px solid #667eea",
-    paddingBottom: "0.5rem",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#0f172a",
+    margin: "0 0 12px 0",
+    paddingBottom: 8,
+    borderBottom: "1px solid #f1f5f9",
   },
   infoGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "1rem",
+    gap: "12px 20px",
   },
   infoItem: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.5rem",
+    gap: 4,
   },
   infoLabel: {
-    fontSize: "0.85rem",
-    color: "#718096",
-    fontWeight: "500",
+    fontSize: 11,
+    color: "#94a3b8",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.4px",
   },
   infoValue: {
-    fontSize: "0.95rem",
-    color: "#2d3748",
-    fontWeight: "600",
+    fontSize: 13,
+    color: "#0f172a",
+    fontWeight: 600,
+    wordBreak: "break-all",
   },
+
+  /* Items */
   itemsList: {
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
-  },
-  itemCardOuter: {
-    padding: "0.5rem",
-    // backgroundColor: "#6ae23aff",
-    borderRadius: "8px",
-    border: "1px solid #e2e8f0",
+    gap: 12,
   },
   itemCard: {
-    padding: "1rem",
-    backgroundColor: "#f7fafc",
-    borderRadius: "8px",
+    borderRadius: 10,
     border: "1px solid #e2e8f0",
+    borderLeft: "3px solid #6366f1",
+    padding: "14px 16px",
+    backgroundColor: "#fafafa",
+  },
+  itemCatBadge: {
+    display: "inline-block",
+    fontSize: 10,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    padding: "2px 8px",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
+    borderRadius: 6,
+    marginBottom: 8,
   },
   itemHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "0.75rem",
+    marginBottom: 10,
   },
-
-  itemCat: {
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#2d3748",
-    marginBottom: "10px",
-    display: "block",
-  },
-
   itemBrand: {
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#2d3748",
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#0f172a",
   },
   itemPrice: {
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#48bb78",
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#10b981",
   },
   variantBadges: {
     display: "flex",
-    gap: "0.5rem",
-    marginBottom: "0.75rem",
+    gap: 6,
+    marginBottom: 10,
     flexWrap: "wrap",
   },
-  badge: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#e6fffa",
-    color: "#234e52",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+  variantBadge: {
+    padding: "3px 10px",
+    backgroundColor: "#f0fdfa",
+    color: "#0f766e",
+    border: "1px solid #99f6e4",
+    borderRadius: 20,
+    fontSize: 11,
+    fontWeight: 600,
   },
-  itemDetails: {
+  itemDetailsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "6px 16px",
+    paddingTop: 10,
+    borderTop: "1px solid #f1f5f9",
+  },
+  itemDetailCell: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.5rem",
-    fontSize: "0.9rem",
-    color: "#4a5568",
-    paddingTop: "0.75rem",
-    borderTop: "1px solid #e2e8f0",
+    gap: 2,
   },
-  itemSubtotal: {
-    fontWeight: "700",
-    color: "#667eea",
-    fontSize: "1rem",
+  itemDetailLabel: {
+    fontSize: 10,
+    color: "#94a3b8",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.4px",
   },
-  totalSection: {
+  itemDetailValue: {
+    fontSize: 12,
+    color: "#475569",
+    fontWeight: 600,
+    fontFamily: "monospace",
+  },
+
+  /* Total row */
+  totalRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "1.5rem",
-    backgroundColor: "#f7fafc",
-    borderRadius: "8px",
-    marginTop: "1rem",
+    padding: "14px 18px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    border: "1px solid #f1f5f9",
   },
   totalLabel: {
-    fontSize: "1.25rem",
-    fontWeight: "600",
-    color: "#2d3748",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#475569",
   },
   totalValue: {
-    fontSize: "2rem",
-    fontWeight: "700",
-    color: "#48bb78",
-  },
-  modalFooter: {
-    padding: "1.5rem",
-    borderTop: "1px solid #e2e8f0",
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  closeModalBtn: {
-    padding: "0.75rem 1.5rem",
-    border: "none",
-    backgroundColor: "#667eea",
-    color: "#fff",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "0.95rem",
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: 700,
+    color: "#10b981",
   },
 
-  statusClickable: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    cursor: "pointer",
-    padding: "4px 8px",
-    borderRadius: "8px",
-    transition: "0.2s",
-  },
-
-  statusClickableHover: {
-    backgroundColor: "rgba(0,0,0,0.05)",
-  },
-
-  modalActionBtn: {
-    padding: "0.75rem 1rem",
-    backgroundColor: "#667eea",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "1rem",
-    fontWeight: "600",
-    transition: "0.2s",
-  },
-
-  cancelOrderBtn: {
-    padding: "0.75rem 1rem",
-    backgroundColor: "#ef4444",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "1rem",
-    fontWeight: "600",
-    transition: "0.2s",
-  },
-
-  statusRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "1rem",
-    backgroundColor: "#f7fafc",
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    marginBottom: "1rem",
-  },
-
-  statusValueBox: {
+  /* Progress bar */
+  progressContainer: {
     display: "flex",
     alignItems: "center",
-    gap: "0.5rem",
-    fontSize: "1rem",
-    fontWeight: "700",
-    color: "#2d3748",
+    justifyContent: "center",
+    marginBottom: 24,
+    padding: "16px 8px",
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    border: "1px solid #f1f5f9",
+  },
+  progressStep: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+  },
+  progressCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 11,
+    fontWeight: 700,
+    transition: "background 0.2s",
+  },
+  progressLabel: {
+    fontSize: 10,
+    textAlign: "center",
+    whiteSpace: "nowrap",
+    letterSpacing: "0.2px",
+  },
+  progressLine: {
+    height: 2,
+    width: 32,
+    marginBottom: 18,
+    transition: "background 0.2s",
   },
 
-  statusBtnHover: {
-    transform: "scale(1.03)",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+  /* Cancelled banner */
+  cancelledBanner: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "12px 16px",
+    backgroundColor: "#fff1f2",
+    border: "1px solid #fecdd3",
+    borderRadius: 10,
+    color: "#be123c",
+    fontSize: 13,
+    fontWeight: 600,
+    marginBottom: 20,
   },
 
+  /* History */
   historySection: {
-    padding: "1.5rem",
-    backgroundColor: "#fafbfc",
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
+    padding: "14px 16px",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #f1f5f9",
+    borderRadius: 10,
+    marginBottom: 20,
   },
   historySectionTitle: {
-    fontSize: "0.9rem",
+    fontSize: 12,
     fontWeight: 600,
-    color: "#1e293b",
-    marginBottom: "1rem",
-    margin: 0,
+    color: "#0f172a",
+    margin: "0 0 12px 0",
   },
   historyTimeline: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.75rem",
-    marginTop: "1rem",
+    gap: 10,
   },
   historyItem: {
     display: "flex",
-    gap: "1rem",
+    gap: 12,
     alignItems: "flex-start",
   },
   historyDot: {
-    width: "12px",
-    height: "12px",
+    width: 10,
+    height: 10,
     borderRadius: "50%",
     backgroundColor: "#3b82f6",
-    marginTop: "0.25rem",
+    marginTop: 3,
     flexShrink: 0,
   },
   historyContent: {
     flex: 1,
   },
   historyText: {
-    fontSize: "0.9rem",
+    fontSize: 13,
     color: "#1e293b",
     fontWeight: 500,
     display: "flex",
     alignItems: "center",
-    gap: "0.5rem",
+    gap: 6,
   },
   historyFrom: {
     color: "#64748b",
   },
   historyArrow: {
     color: "#94a3b8",
+    display: "inline-flex",
+    alignItems: "center",
   },
   historyTo: {
     color: "#10b981",
     fontWeight: 600,
   },
   historyDate: {
-    fontSize: "0.75rem",
+    fontSize: 11,
     color: "#94a3b8",
-    marginTop: "0.25rem",
+    marginTop: 2,
+  },
+
+  /* Status action row */
+  statusActionRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "12px 16px",
+    backgroundColor: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  statusActionLeft: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  markAsBtn: {
+    padding: "9px 18px",
+    backgroundColor: "#6366f1",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 600,
+    transition: "background 0.15s",
+    outline: "none",
+  },
+  cancelOrderBtn: {
+    width: "100%",
+    padding: "10px",
+    backgroundColor: "#ef4444",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 600,
+    transition: "background 0.15s",
+    outline: "none",
+    marginTop: 4,
   },
 };

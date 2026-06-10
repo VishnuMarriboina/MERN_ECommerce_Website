@@ -1,14 +1,68 @@
-// new code
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchMyOrders } from "../Redux/slices/OrderSlice";
 import { useNavigate } from "react-router-dom";
-import shirt from "../assets/shirt_icon.png";
-import Shoe from "../assets/shoe.jpg";
-import Belt from "../assets/Belt.jpg";
-import Watch from "../assets/watch.jpg";
-import Sandal from "../assets/slippers.webp";
-import tshirt from "../assets/Tshirt.jpg";
+import {
+  STATUS_OPTIONS,
+  ORDER_STATUS_COLORS as STATUS_COLORS,
+  CATEGORY_IMAGES,
+} from "./DataFolder/componentsData";
+import api from "../utils/APIKit";
+
+function getStatusColor(status) {
+  return STATUS_COLORS[status] || "#64748b";
+}
+
+/* ── Star picker ─────────────────────────────────────────── */
+function StarRating({ value, onChange, disabled }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span
+          key={star}
+          onClick={() => !disabled && onChange(star)}
+          onMouseEnter={() => !disabled && setHovered(star)}
+          onMouseLeave={() => !disabled && setHovered(0)}
+          style={{
+            fontSize: 26,
+            cursor: disabled ? "default" : "pointer",
+            color: star <= (hovered || value) ? "#f59e0b" : "#e2e8f0",
+            transition: "color 0.12s",
+            lineHeight: 1,
+          }}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function getCategoryImage(model) {
+  return CATEGORY_IMAGES[model?.toLowerCase().trim()] || null;
+}
+
+// Mirrors the product-list logic: specific variant → first variant → category asset
+function getItemImage(item) {
+  const variants = item.details?.variants;
+  if (variants?.length) {
+    const matched = variants.find((v) => String(v._id) === String(item.variantId));
+    const url = matched?.image_url || variants[0]?.image_url;
+    if (url && url !== "No image found") return url;
+  }
+  return getCategoryImage(item.productModel);
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function Orders() {
   const dispatch = useDispatch();
@@ -17,510 +71,356 @@ export default function Orders() {
 
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedItem, setSelectedItem] = useState(null);
-  const [showModal, setShowModal] = useState(false);
 
-  const statusOptions = [
-    "All",
-    "Pending",
-    "Confirmed",
-    "Shipped",
-    "Delivered",
-    "Cancelled",
-  ];
+  // ratings keyed by productId: { userRating, submitting, submitted }
+  const [ratings, setRatings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("productRatings") || "{}"); } catch { return {}; }
+  });
+  const [pendingStar, setPendingStar] = useState({});
 
   useEffect(() => {
     dispatch(fetchMyOrders());
   }, [dispatch]);
 
-  const getStatusColor = (status) => {
-    const statusColors = {
-      Confirmed: "#10b981",
-      Pending: "#f59e0b",
-      Shipped: "#3b82f6",
-      Delivered: "#6366f1",
-      Cancelled: "#ef4444",
-    };
-    return statusColors[status] || "#64748b";
-  };
+  const filteredOrders = selectedStatus === "All"
+    ? (orders || [])
+    : (orders || []).filter((o) => o.status === selectedStatus);
 
-  const getStatusIcon = (status) => {
-    const icons = {
-      Confirmed: "✓",
-      Pending: "⏳",
-      Shipped: "🚚",
-      Delivered: "📦",
-      Cancelled: "✗",
-    };
-    return icons[status] || "•";
-  };
+  const getCount = (status) =>
+    status === "All"
+      ? orders?.length || 0
+      : orders?.filter((o) => o.status === status).length || 0;
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  const openModal = (item, order) => setSelectedItem({ ...item, orderInfo: order });
+  const closeModal = () => setSelectedItem(null);
+
+  const submitRating = useCallback(async (productId, variantId, productModel, star) => {
+    setRatings((prev) => {
+      const next = { ...prev, [variantId]: { ...prev[variantId], submitting: true } };
+      localStorage.setItem("productRatings", JSON.stringify(next));
+      return next;
     });
-  };
-
-  const getCategoryIcon = (model) => {
-    if (!model) return "📦";
-
-    const formatted = model.toLowerCase().trim();
-
-    const icons = {
-      tshirt: tshirt,
-      shirt: shirt,
-      shirts: shirt,
-      t_shirt: tshirt,
-      "t-shirt": tshirt,
-      belt: Belt,
-      watch: Watch,
-      watches: Watch,
-      shoe: Shoe,
-      shoes: Shoe,
-      sandal: Sandal,
-      sandals: Sandal,
-    };
-
-    return icons[formatted] || "📦";
-  };
-
-  const filterOrders = () => {
-    let filtered = orders || [];
-
-    // Filter by status
-    if (selectedStatus !== "All") {
-      filtered = filtered.filter((order) => order.status === selectedStatus);
+    try {
+      const res = await api.post("/products/rate", { productId, variantId, productModel, rating: star });
+      const data = res.data.data;
+      setRatings((prev) => {
+        const next = { ...prev, [variantId]: { userRating: data.userRating, submitting: false, submitted: true, avgRating: data.rating, ratingCount: data.ratingCount } };
+        localStorage.setItem("productRatings", JSON.stringify(next));
+        return next;
+      });
+    } catch {
+      setRatings((prev) => {
+        const next = { ...prev, [variantId]: { ...prev[variantId], submitting: false } };
+        localStorage.setItem("productRatings", JSON.stringify(next));
+        return next;
+      });
     }
+  }, []);
 
-    return filtered;
-  };
+  if (loading) {
+    return (
+      <div style={styles.centered}>
+        <div style={styles.spinner} />
+        <p style={styles.mutedText}>Loading orders…</p>
+      </div>
+    );
+  }
 
-  const filteredOrders = filterOrders();
-  const filteredCount = filteredOrders.length;
-
-  const getStatusCount = (status) => {
-    if (status === "All") return orders?.length || 0;
-    return orders?.filter((order) => order.status === status).length || 0;
-  };
-
-  const openItemModal = (item, order) => {
-    setSelectedItem({ ...item, orderInfo: order });
-
-    console.log("item", item);
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedItem(null);
-  };
+  if (error) {
+    return (
+      <div style={styles.centered}>
+        <div style={styles.alertBox}>
+          <span style={styles.alertTitle}>Failed to load orders</span>
+          <span style={styles.mutedText}>{error}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={styles.container}>
-      {loading ? (
-        <div style={styles.loadingContainer}>
-          <div style={styles.spinner}></div>
-          <p style={styles.loadingText}>Loading Orders...</p>
+    <div style={styles.page}>
+      {/* Page header */}
+      <div style={styles.pageHeader}>
+        <div>
+          <h1 style={styles.pageTitle}>My Orders</h1>
+          <p style={styles.pageSubtitle}>
+            {filteredOrders.length} {filteredOrders.length === 1 ? "order" : "orders"} found
+          </p>
         </div>
-      ) : error ? (
-        <div style={styles.errorContainer}>
-          <div style={styles.errorIcon}>⚠️</div>
-          <h3 style={styles.errorTitle}>Failed to Load Orders</h3>
-          <p style={styles.errorMessage}>{error}</p>
+        <button style={styles.shopBtn} onClick={() => navigate("/")}>
+          Continue Shopping
+        </button>
+      </div>
+
+      {/* Status filter tabs */}
+      <div style={styles.filterBar}>
+        {STATUS_OPTIONS.map((status) => {
+          const active = selectedStatus === status;
+          const color = status === "All" ? "#3b82f6" : getStatusColor(status);
+          return (
+            <button
+              key={status}
+              style={{
+                ...styles.filterTab,
+                ...(active
+                  ? { backgroundColor: color, color: "#fff", borderColor: color }
+                  : {}),
+              }}
+              onClick={() => setSelectedStatus(status)}
+            >
+              {status !== "All" && (
+                <span
+                  style={{
+                    ...styles.filterDot,
+                    background: active ? "rgba(255,255,255,0.7)" : color,
+                  }}
+                />
+              )}
+              {status}
+              <span style={{ ...styles.filterCount, opacity: active ? 0.8 : 1 }}>
+                {getCount(status)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Empty state */}
+      {(orders?.length === 0) ? (
+        <div style={styles.emptyState}>
+          <div style={styles.emptyIcon} />
+          <h3 style={styles.emptyTitle}>No Orders Yet</h3>
+          <p style={styles.mutedText}>Start shopping to see your orders here.</p>
+          <button style={styles.shopBtn} onClick={() => navigate("/")}>
+            Browse Products
+          </button>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div style={styles.emptyState}>
+          <h3 style={styles.emptyTitle}>No {selectedStatus} orders</h3>
+          <p style={styles.mutedText}>Try selecting a different status filter.</p>
         </div>
       ) : (
-        <div style={styles.content}>
-          <div style={styles.header}>
-            <div>
-              <h1 style={styles.pageTitle}>My Orders</h1>
-              <p style={styles.pageSubtitle}>
-                {filteredCount} {filteredCount === 1 ? "Order" : "Orders"} Found
-              </p>
-            </div>
-            <div>
-              <button style={styles.primaryBtn} onClick={() => navigate("/")}>
-                Continue Shopping
-              </button>
-            </div>
-          </div>
+        <div style={styles.orderList}>
+          {filteredOrders.map((order, index) => (
+            <div key={order._id || index} style={styles.orderCard}>
 
-          {orders.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🛍️</div>
-              <h3 style={styles.emptyTitle}>No Orders Yet</h3>
-              <p style={styles.emptyMessage}>
-                Start shopping to see your orders here!
-              </p>
-            </div>
-          ) : (
-            <div style={styles.mainContent}>
-              {/* Sidebar */}
-              <div style={styles.sidebar}>
-                <div style={styles.sidebarHeader}>
-                  <h3 style={styles.sidebarTitle}>Filter Orders</h3>
+              {/* Order header row */}
+              <div style={styles.orderHead}>
+                <div style={styles.orderMeta}>
+                  <span style={styles.orderId}>
+                    #{order._id?.slice(-8).toUpperCase()}
+                  </span>
+                  <span style={styles.orderDate}>{formatDate(order.orderedDate)}</span>
                 </div>
+                <span
+                  style={{
+                    ...styles.statusBadge,
+                    background: getStatusColor(order.status) + "18",
+                    color: getStatusColor(order.status),
+                    borderColor: getStatusColor(order.status) + "40",
+                  }}
+                >
+                  <span
+                    style={{
+                      ...styles.statusDot,
+                      background: getStatusColor(order.status),
+                    }}
+                  />
+                  {order.status}
+                </span>
+              </div>
 
-                {/* Status Filter */}
-                <div style={styles.filterSection}>
-                  <h4 style={styles.filterTitle}>Order Status</h4>
-                  <div style={styles.statusList}>
-                    {statusOptions.map((status) => (
-                      <div
-                        key={status}
-                        style={{
-                          ...styles.statusItem,
-                          ...(selectedStatus === status
-                            ? styles.statusItemActive
-                            : {}),
-                        }}
-                        onClick={() => setSelectedStatus(status)}
-                      >
-                        <div style={styles.statusItemLeft}>
-                          {status !== "All" && (
-                            <span
-                              style={{
-                                ...styles.statusDot,
-                                backgroundColor: getStatusColor(status),
-                              }}
-                            ></span>
-                          )}
-                          <span style={styles.statusName}>{status}</span>
-                        </div>
-                        <span style={styles.statusCount}>
-                          {getStatusCount(status)}
-                        </span>
+              {/* Order history */}
+              {order.history?.length > 0 && (
+                <div style={styles.historySection}>
+                  <p style={styles.sectionLabel}>Order History</p>
+                  <div style={styles.historyRow}>
+                    {order.history.map((hist, idx) => (
+                      <div key={hist._id || idx} style={styles.historyStep}>
+                        <span style={styles.historyFrom}>{hist.from}</span>
+                        <span style={styles.historyArrow}>→</span>
+                        <span style={styles.historyTo}>{hist.to}</span>
+                        <span style={styles.historyDate}>{formatDate(hist.changedAt)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Items */}
+              <div style={styles.itemsSection}>
+                <p style={styles.sectionLabel}>
+                  Items ({order.items?.length || 0})
+                </p>
+                <div style={styles.itemsList}>
+                  {order.items?.map((item, idx) => {
+                    const label =
+                      item.productModel
+                        ? item.productModel.charAt(0).toUpperCase() + item.productModel.slice(1)
+                        : "Product";
+                    const imgSrc = getItemImage(item);
+
+                    return (
+                      <div
+                        key={item._id || idx}
+                        style={styles.itemRow}
+                        onClick={() => openModal(item, order)}
+                      >
+                        {imgSrc ? (
+                          <img
+                            src={imgSrc}
+                            alt={label}
+                            style={styles.itemThumb}
+                            onError={(e) => {
+                              const fallback = getCategoryImage(item.productModel);
+                              if (fallback) e.currentTarget.src = fallback;
+                            }}
+                          />
+                        ) : (
+                          <div style={styles.itemThumbPlaceholder} />
+                        )}
+                        <div style={styles.itemInfo}>
+                          <span style={styles.itemName}>{label}</span>
+                          <span style={styles.itemSub}>
+                            Qty: {item.quantity} &nbsp;·&nbsp; ID: {item.productId?.slice(-8)}
+                          </span>
+                        </div>
+                        <span style={styles.itemPrice}>₹{item.price?.toFixed(2)}</span>
+                        <span style={styles.itemViewBtn}>Details</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Orders Container */}
-              <div style={styles.ordersContainer}>
-                {filteredOrders.length === 0 ? (
-                  <div style={styles.noResults}>
-                    <div style={styles.noResultsIcon}>🔍</div>
-                    <h3 style={styles.noResultsTitle}>No Orders Found</h3>
-                    <p style={styles.noResultsMessage}>
-                      Try adjusting your filters
-                    </p>
-                  </div>
-                ) : (
-                  filteredOrders.map((order, index) => (
-                    <div key={order._id || index} style={styles.orderCard}>
-                      {/* Order Header */}
-                      <div style={styles.orderHeader}>
-                        <div style={styles.orderHeaderLeft}>
-                          <div style={styles.orderIdSection}>
-                            <span style={styles.orderIdLabel}>Order ID:</span>
-                            <span style={styles.orderIdValue}>
-                              {order._id?.slice(-8).toUpperCase()}
-                            </span>
-                          </div>
-                          <span style={styles.orderDate}>
-                            {formatDate(order.orderedDate)}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            ...styles.statusBadge,
-                            backgroundColor: getStatusColor(order.status),
-                          }}
-                        >
-                          <span style={styles.statusIcon}>
-                            {getStatusIcon(order.status)}
-                          </span>
-                          {order.status}
-                        </div>
-                      </div>
-
-                      {/* Order History */}
-                      {order.history && order.history.length > 0 && (
-                        <div style={styles.historySection}>
-                          <h4 style={styles.historySectionTitle}>
-                            Order History
-                          </h4>
-                          <div style={styles.historyTimeline}>
-                            {order.history.map((hist, idx) => (
-                              <div
-                                key={hist._id || idx}
-                                style={styles.historyItem}
-                              >
-                                <div style={styles.historyDot}></div>
-                                <div style={styles.historyContent}>
-                                  <div style={styles.historyText}>
-                                    <span style={styles.historyFrom}>
-                                      {hist.from}
-                                    </span>
-                                    <span style={styles.historyArrow}>→</span>
-                                    <span style={styles.historyTo}>
-                                      {hist.to}
-                                    </span>
-                                  </div>
-                                  <div style={styles.historyDate}>
-                                    {formatDate(hist.changedAt)}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Order Items */}
-                      <div style={styles.itemsSection}>
-                        <h4 style={styles.itemsTitle}>
-                          Items ({order.items?.length || 0})
-                        </h4>
-
-                        <div style={styles.itemsList}>
-                          {order.items?.map((item, itemIndex) => {
-                            const title = item.productModel || "Product";
-
-                            const imageSrc =
-                              item.details?.image_url &&
-                              item.details.image_url.trim() !== "" &&
-                              item.details.image_url !== "No image found"
-                                ? item.details.image_url
-                                : getCategoryIcon(item.productModel);
-
-                            return (
-                              <div
-                                key={item._id || itemIndex}
-                                style={styles.itemCard}
-                                onClick={() => openItemModal(item, order)}
-                              >
-                                <div>
-                                  <img
-                                    src={imageSrc}
-                                    alt={title}
-                                    onError={(e) => {
-                                      e.currentTarget.src =
-                                        getCategoryIcon(title);
-                                    }}
-                                    style={styles.itemImage}
-                                  />
-                                </div>
-
-                                <div style={styles.itemDetails}>
-                                  <div style={styles.itemName}>
-                                    {title.charAt(0).toUpperCase() +
-                                      title.slice(1)}
-                                  </div>
-
-                                  <div style={styles.itemMeta}>
-                                    <span style={styles.itemQuantity}>
-                                      Qty: {item.quantity}
-                                    </span>
-                                    <span style={styles.itemPrice}>
-                                      ₹{item.price?.toFixed(2)}
-                                    </span>
-                                  </div>
-
-                                  <div style={styles.itemId}>
-                                    ID: {item.productId?.slice(-8)}
-                                  </div>
-                                </div>
-
-                                <div style={styles.viewDetailsBtn}>
-                                  View Details →
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Order Footer */}
-                      <div style={styles.orderFooter}>
-                        <div style={styles.paymentMethod}>
-                          <span style={styles.paymentLabel}>Payment:</span>
-                          <span style={styles.paymentValue}>
-                            {order.paymentType} - {order.paymentMode}
-                          </span>
-                        </div>
-                        <div style={styles.totalSection}>
-                          <span style={styles.totalLabel}>Total Amount:</span>
-                          <span style={styles.totalAmount}>
-                            ₹{order.totalAmount?.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+              {/* Order footer */}
+              <div style={styles.orderFoot}>
+                <span style={styles.paymentInfo}>
+                  {order.paymentType} · {order.paymentMode}
+                </span>
+                <div style={styles.totalRow}>
+                  <span style={styles.totalLabel}>Total</span>
+                  <span style={styles.totalAmount}>₹{order.totalAmount?.toFixed(2)}</span>
+                </div>
               </div>
+
             </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && selectedItem && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Product Details</h2>
-              <button style={styles.closeBtn} onClick={closeModal}>
-                ✕
-              </button>
+      {/* Item detail modal */}
+      {selectedItem && (
+        <div style={styles.overlay} onClick={closeModal}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHead}>
+              <span style={styles.modalTitle}>Item Details</span>
+              <button style={styles.closeBtn} onClick={closeModal}>✕</button>
             </div>
 
             <div style={styles.modalBody}>
-              <div style={styles.modalImageSection}>
-                <img
-                  src={
-                    selectedItem.details?.image_url &&
-                    selectedItem.details.image_url !== "No image found"
-                      ? selectedItem.details.image_url
-                      : getCategoryIcon(selectedItem.productModel)
-                  }
-                  alt={selectedItem.productModel}
-                  style={styles.modalImage}
-                  onError={(e) => {
-                    e.currentTarget.src = getCategoryIcon(
-                      selectedItem.productModel
-                    );
-                  }}
-                />
+              {/* Image */}
+              <div style={styles.modalImgWrap}>
+                {(() => {
+                  const src = getItemImage(selectedItem);
+                  return src ? (
+                    <img
+                      src={src}
+                      alt={selectedItem.productModel}
+                      style={styles.modalImg}
+                      onError={(e) => {
+                        const fb = getCategoryImage(selectedItem.productModel);
+                        if (fb) e.currentTarget.src = fb;
+                      }}
+                    />
+                  ) : (
+                    <div style={styles.modalImgPlaceholder} />
+                  );
+                })()}
               </div>
 
-              <div style={styles.modalDetailsSection}>
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Product:</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.productModel?.toUpperCase()}
-                  </span>
-                </div>
-
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Product ID:</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.productId}
-                  </span>
-                </div>
-
-                {/* <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Variant ID:</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.variantId}
-                  </span>
-                </div> */}
-
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Quantity:</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.quantity}
-                  </span>
-                </div>
-
-                <div style={styles.detailRow}>
-                  <span style={styles.detailLabel}>Price:</span>
-                  <span style={styles.detailValue}>
-                    ₹{selectedItem.price?.toFixed(2)}
-                  </span>
+              {/* Details + Rating */}
+              <div style={styles.modalDetails}>
+                <div style={styles.modalSection}>
+                  <p style={styles.modalSectionLabel}>Order Info</p>
+                  {[
+                    ["Product",    selectedItem.productModel?.toUpperCase()],
+                    ["Product ID", selectedItem.productId],
+                    ["Quantity",   selectedItem.quantity],
+                    ["Price",      `₹${selectedItem.price?.toFixed(2)}`],
+                  ].map(([label, value]) => (
+                    <div key={label} style={styles.detailRow}>
+                      <span style={styles.detailLabel}>{label}</span>
+                      <span style={styles.detailValue}>{value}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {selectedItem.details && (
-                  <>
-                    <div style={styles.divider}></div>
-                    <h3 style={styles.modalSubtitle}>Product Specifications</h3>
-
-                    {selectedItem.details.brand && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Brand:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.brand}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.category && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Category:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.category}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.color && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Color:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.color}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.size && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Size:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.size}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.type_of_material && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Material:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.type_of_material}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.fit && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Fit:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.fit}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.collar_type && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Collar Type:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.collar_type}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.sleeve_type && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Sleeve Type:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.sleeve_type}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedItem.details.cost && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Cost:</span>
-                        <span style={styles.detailValue}>
-                          ₹{selectedItem.details.cost}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* {selectedItem.details.count !== undefined && (
-                      <div style={styles.detailRow}>
-                        <span style={styles.detailLabel}>Stock Count:</span>
-                        <span style={styles.detailValue}>
-                          {selectedItem.details.count}
-                        </span>
-                      </div>
-                    )} */}
-                  </>
+                  <div style={styles.modalSection}>
+                    <p style={styles.modalSectionLabel}>Specifications</p>
+                    {[
+                      ["Brand",        selectedItem.details.brand],
+                      ["Category",     selectedItem.details.category],
+                      ["Color",        selectedItem.details.color],
+                      ["Size",         selectedItem.details.size],
+                      ["Material",     selectedItem.details.type_of_material],
+                      ["Fit",          selectedItem.details.fit],
+                      ["Collar",       selectedItem.details.collar_type],
+                      ["Sleeve",       selectedItem.details.sleeve_type],
+                      ["Cost",         selectedItem.details.cost ? `₹${selectedItem.details.cost}` : null],
+                    ]
+                      .filter(([, v]) => v)
+                      .map(([label, value]) => (
+                        <div key={label} style={styles.detailRow}>
+                          <span style={styles.detailLabel}>{label}</span>
+                          <span style={styles.detailValue}>{value}</span>
+                        </div>
+                      ))}
+                  </div>
                 )}
+
+                {/* Rating — available once order is placed (not Pending/Cancelled) */}
+                {!["Pending", "Cancelled"].includes(selectedItem.orderInfo?.status) && (() => {
+                  const vid = selectedItem.variantId;
+                  const ratingData = ratings[vid] || {};
+                  const star = pendingStar[vid] ?? ratingData.userRating ?? 0;
+                  const alreadyRated = !!ratingData.submitted || !!ratingData.userRating;
+                  return (
+                    <div style={styles.ratingSection}>
+                      <p style={styles.modalSectionLabel}>Rate this Variant</p>
+                      {alreadyRated ? (
+                        <div style={styles.ratedBadge}>
+                          <StarRating value={ratingData.userRating || star} onChange={() => {}} disabled />
+                          <span style={styles.ratedLabel}>You rated {ratingData.userRating || star}/5</span>
+                          {ratingData.avgRating && (
+                            <span style={styles.avgLabel}>Avg: {ratingData.avgRating}★ ({ratingData.ratingCount} ratings)</span>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          <StarRating
+                            value={star}
+                            onChange={(s) => setPendingStar((p) => ({ ...p, [vid]: s }))}
+                            disabled={ratingData.submitting}
+                          />
+                          <button
+                            disabled={!star || ratingData.submitting}
+                            onClick={() => submitRating(selectedItem.productId, vid, selectedItem.productModel, star)}
+                            style={{
+                              ...styles.submitRatingBtn,
+                              opacity: (!star || ratingData.submitting) ? 0.5 : 1,
+                              cursor: (!star || ratingData.submitting) ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            {ratingData.submitting ? "Submitting…" : "Submit Rating"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -531,577 +431,488 @@ export default function Orders() {
 }
 
 const styles = {
-  container: {
+  page: {
+    padding: "20px 24px",
+    backgroundColor: "#f8fafc",
     minHeight: "100vh",
-    backgroundColor: "#f5f7fa",
-    fontFamily:
-      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
   },
-  loadingContainer: {
+
+  // States
+  centered: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     minHeight: "60vh",
-    gap: "1rem",
+    gap: "12px",
   },
   spinner: {
-    width: "50px",
-    height: "50px",
-    border: "4px solid #e0e0e0",
-    borderTop: "4px solid #3b82f6",
+    width: "36px",
+    height: "36px",
+    border: "3px solid #e2e8f0",
+    borderTop: "3px solid #3b82f6",
     borderRadius: "50%",
-    animation: "spin 1s linear infinite",
+    animation: "spin 0.8s linear infinite",
   },
-  "@keyframes spin": {
-    "0%": { transform: "rotate(0deg)" },
-    "100%": { transform: "rotate(360deg)" },
-  },
-  loadingText: {
-    fontSize: "1.1rem",
-    color: "#64748b",
-    fontWeight: 500,
-  },
-  errorContainer: {
+  alertBox: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: "60vh",
-    padding: "2rem",
+    gap: "6px",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    borderRadius: "10px",
+    padding: "20px 28px",
   },
-  errorIcon: {
-    fontSize: "4rem",
-    marginBottom: "1rem",
+  alertTitle: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#dc2626",
   },
-  errorTitle: {
-    fontSize: "1.5rem",
-    color: "#1e293b",
-    marginBottom: "0.5rem",
-    fontWeight: 600,
-  },
-  errorMessage: {
-    fontSize: "1rem",
-    color: "#64748b",
+  mutedText: {
+    fontSize: "13px",
+    color: "#94a3b8",
+    margin: 0,
     textAlign: "center",
-    maxWidth: "500px",
   },
-  content: {
-    margin: "0 auto",
-    padding: "2rem 5rem",
-    maxWidth: "1400px",
-  },
-  header: {
+
+  // Page header
+  pageHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "1rem",
+    marginBottom: "16px",
+    flexWrap: "wrap",
+    gap: "12px",
   },
   pageTitle: {
-    fontSize: "2.5rem",
-    fontWeight: 700,
+    fontSize: "20px",
+    fontWeight: "700",
     color: "#1e293b",
-    margin: 0,
-    marginBottom: "0.5rem",
+    margin: "0 0 2px 0",
   },
   pageSubtitle: {
-    fontSize: "1rem",
-    color: "#64748b",
-    fontWeight: 400,
+    fontSize: "12px",
+    color: "#94a3b8",
+    margin: 0,
   },
-  primaryBtn: {
-    padding: "12px 24px",
-    borderRadius: 8,
-    background: "#0f172a",
+  shopBtn: {
+    background: "#1e293b",
     color: "#fff",
     border: "none",
+    borderRadius: "7px",
+    padding: "8px 18px",
+    fontSize: "13px",
+    fontWeight: "600",
     cursor: "pointer",
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    transition: "all 0.2s",
   },
+
+  // Filter bar
+  filterBar: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+    marginBottom: "16px",
+  },
+  filterTab: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 14px",
+    borderRadius: "20px",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    color: "#64748b",
+    fontSize: "12px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "all 0.15s",
+  },
+  filterDot: {
+    width: "7px",
+    height: "7px",
+    borderRadius: "50%",
+    flexShrink: 0,
+  },
+  filterCount: {
+    fontSize: "11px",
+    background: "rgba(0,0,0,0.08)",
+    borderRadius: "10px",
+    padding: "1px 6px",
+    fontWeight: "700",
+  },
+
+  // Empty state
   emptyState: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: "40vh",
-    padding: "2rem",
-    backgroundColor: "white",
-    borderRadius: "16px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
-  },
-  emptyIcon: {
-    fontSize: "4rem",
-    marginBottom: "1rem",
-  },
-  emptyTitle: {
-    fontSize: "1.5rem",
-    color: "#1e293b",
-    marginBottom: "0.5rem",
-    fontWeight: 600,
-  },
-  emptyMessage: {
-    fontSize: "1rem",
-    color: "#64748b",
-  },
-  mainContent: {
-    display: "flex",
-    gap: "1.5rem",
-    alignItems: "flex-start",
-  },
-  sidebar: {
-    width: "280px",
-    backgroundColor: "white",
-    borderRadius: "16px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
-    position: "sticky",
-    top: "2rem",
-    flexShrink: 0,
-  },
-  sidebarHeader: {
-    padding: "1.5rem",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  sidebarTitle: {
-    fontSize: "1.25rem",
-    fontWeight: 700,
-    color: "#1e293b",
-    margin: 0,
-  },
-  filterSection: {
-    padding: "1.5rem",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  filterTitle: {
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    color: "#64748b",
-    marginBottom: "1rem",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  statusList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  statusItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "0.75rem 1rem",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    backgroundColor: "#f8fafc",
-  },
-  statusItemActive: {
-    backgroundColor: "#3b82f6",
-    color: "white",
-  },
-  statusItemLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-  },
-  statusDot: {
-    width: "10px",
-    height: "10px",
-    borderRadius: "50%",
-  },
-  statusName: {
-    fontSize: "0.95rem",
-    fontWeight: 500,
-  },
-  statusCount: {
-    fontSize: "0.85rem",
-    fontWeight: 600,
-    backgroundColor: "rgba(0,0,0,0.1)",
-    padding: "0.25rem 0.5rem",
+    minHeight: "300px",
+    gap: "10px",
+    background: "#fff",
+    border: "1px solid #e2e8f0",
     borderRadius: "12px",
   },
-  dateInputs: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
+  emptyIcon: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "50%",
+    background: "#f1f5f9",
+    border: "2px dashed #cbd5e1",
   },
-  dateInputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  dateLabel: {
-    fontSize: "0.85rem",
-    fontWeight: 500,
-    color: "#64748b",
-  },
-  dateInput: {
-    padding: "0.5rem",
-    borderRadius: "8px",
-    border: "1px solid #e2e8f0",
-    fontSize: "0.9rem",
-    fontFamily: "inherit",
-  },
-  clearBtn: {
-    marginTop: "1rem",
-    padding: "0.5rem 1rem",
-    borderRadius: "8px",
-    border: "1px solid #e2e8f0",
-    backgroundColor: "white",
-    color: "#64748b",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    fontWeight: 500,
-    width: "100%",
+  emptyTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#1e293b",
+    margin: 0,
   },
 
-  ordersContainer: {
-    flex: 1,
+  // Order list
+  orderList: {
     display: "flex",
     flexDirection: "column",
-    gap: "1.5rem",
+    gap: "12px",
   },
-  noResults: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "400px",
-    backgroundColor: "white",
-    borderRadius: "16px",
-    padding: "2rem",
-  },
-  noResultsIcon: {
-    fontSize: "3rem",
-    marginBottom: "1rem",
-  },
-  noResultsTitle: {
-    fontSize: "1.5rem",
-    fontWeight: 600,
-    color: "#1e293b",
-    marginBottom: "0.5rem",
-  },
-  noResultsMessage: {
-    fontSize: "1rem",
-    color: "#64748b",
-  },
+
+  // Order card
   orderCard: {
-    backgroundColor: "white",
-    borderRadius: "16px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
-    overflow: "hidden",
+    background: "#ffffff",
     border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    overflow: "hidden",
   },
-  orderHeader: {
+
+  orderHead: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "1.5rem",
-    borderBottom: "1px solid #e2e8f0",
-    backgroundColor: "#f8fafc",
+    padding: "12px 16px",
+    borderBottom: "1px solid #f1f5f9",
+    background: "#f8fafc",
   },
-  orderHeaderLeft: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  orderIdSection: {
+  orderMeta: {
     display: "flex",
     alignItems: "center",
-    gap: "0.5rem",
+    gap: "12px",
   },
-  orderIdLabel: {
-    fontSize: "0.85rem",
-    color: "#64748b",
-    fontWeight: 500,
-  },
-  orderIdValue: {
-    fontSize: "1rem",
+  orderId: {
+    fontSize: "13px",
+    fontWeight: "700",
     color: "#1e293b",
-    fontWeight: 700,
     fontFamily: "monospace",
+    letterSpacing: "0.5px",
   },
   orderDate: {
-    fontSize: "0.85rem",
-    color: "#64748b",
+    fontSize: "12px",
+    color: "#94a3b8",
   },
   statusBadge: {
-    padding: "0.5rem 1rem",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "4px 12px",
     borderRadius: "20px",
-    color: "white",
-    fontSize: "0.85rem",
-    fontWeight: 600,
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
+    border: "1px solid",
+    fontSize: "12px",
+    fontWeight: "600",
   },
-  statusIcon: {
-    fontSize: "1rem",
-  },
-  historySection: {
-    padding: "1.5rem",
-    backgroundColor: "#fafbfc",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  historySectionTitle: {
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    color: "#1e293b",
-    marginBottom: "1rem",
-    margin: 0,
-  },
-  historyTimeline: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-    marginTop: "1rem",
-  },
-  historyItem: {
-    display: "flex",
-    gap: "1rem",
-    alignItems: "flex-start",
-  },
-  historyDot: {
-    width: "12px",
-    height: "12px",
+  statusDot: {
+    width: "7px",
+    height: "7px",
     borderRadius: "50%",
-    backgroundColor: "#3b82f6",
-    marginTop: "0.25rem",
-    flexShrink: 0,
   },
-  historyContent: {
-    flex: 1,
+
+  // History
+  historySection: {
+    padding: "10px 16px",
+    borderBottom: "1px solid #f1f5f9",
+    background: "#fafbfc",
   },
-  historyText: {
-    fontSize: "0.9rem",
-    color: "#1e293b",
-    fontWeight: 500,
+  historyRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "6px",
+  },
+  historyStep: {
     display: "flex",
     alignItems: "center",
-    gap: "0.5rem",
+    gap: "6px",
+    background: "#f1f5f9",
+    borderRadius: "6px",
+    padding: "4px 10px",
+    fontSize: "11px",
   },
   historyFrom: {
     color: "#64748b",
+    fontWeight: "500",
   },
   historyArrow: {
-    color: "#94a3b8",
+    color: "#cbd5e1",
+    fontSize: "10px",
   },
   historyTo: {
     color: "#10b981",
-    fontWeight: 600,
+    fontWeight: "600",
   },
   historyDate: {
-    fontSize: "0.75rem",
     color: "#94a3b8",
-    marginTop: "0.25rem",
+    marginLeft: "4px",
+    borderLeft: "1px solid #e2e8f0",
+    paddingLeft: "6px",
   },
+
+  // Items
   itemsSection: {
-    padding: "1.5rem",
+    padding: "12px 16px",
   },
-  itemsTitle: {
-    fontSize: "1rem",
-    fontWeight: 600,
-    color: "#1e293b",
-    marginBottom: "1rem",
-    margin: 0,
+  sectionLabel: {
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.6px",
+    margin: "0 0 8px 0",
   },
   itemsList: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.75rem",
-    marginTop: "1rem",
+    gap: "6px",
   },
-  itemCard: {
+  itemRow: {
     display: "flex",
     alignItems: "center",
-    gap: "1rem",
-    padding: "1rem",
-    backgroundColor: "#f8fafc",
-    borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    gap: "12px",
+    padding: "8px 12px",
+    background: "#f8fafc",
+    border: "1px solid #f1f5f9",
+    borderRadius: "8px",
     cursor: "pointer",
-    transition: "all 0.2s",
+    transition: "border-color 0.15s",
   },
-  itemImage: {
-    width: 110,
-    height: 110,
+  itemThumb: {
+    width: "56px",
+    height: "56px",
     objectFit: "cover",
-    borderRadius: 8,
-    border: "1px solid #eef2f7",
-    background: "#d3d9dfff",
+    borderRadius: "6px",
+    border: "1px solid #e2e8f0",
+    flexShrink: 0,
   },
-  itemDetails: {
+  itemThumbPlaceholder: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "6px",
+    background: "#e2e8f0",
+    flexShrink: 0,
+  },
+  itemInfo: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: "0.25rem",
+    gap: "3px",
+    minWidth: 0,
   },
   itemName: {
-    fontSize: "1rem",
-    fontWeight: 600,
+    fontSize: "13px",
+    fontWeight: "600",
     color: "#1e293b",
   },
-  itemMeta: {
-    display: "flex",
-    gap: "1rem",
-    alignItems: "center",
-  },
-  itemQuantity: {
-    fontSize: "0.85rem",
-    color: "#64748b",
-  },
-  itemPrice: {
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    color: "#3b82f6",
-  },
-  itemId: {
-    fontSize: "0.75rem",
+  itemSub: {
+    fontSize: "11px",
     color: "#94a3b8",
     fontFamily: "monospace",
   },
-  viewDetailsBtn: {
-    padding: "0.5rem 1rem",
-    backgroundColor: "#3b82f6",
-    color: "white",
-    borderRadius: "8px",
-    fontSize: "0.85rem",
-    fontWeight: 500,
+  itemPrice: {
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#3b82f6",
     whiteSpace: "nowrap",
   },
-  orderFooter: {
+  itemViewBtn: {
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#3b82f6",
+    background: "#eff6ff",
+    border: "1px solid #bfdbfe",
+    borderRadius: "6px",
+    padding: "4px 10px",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  },
+
+  // Order footer
+  orderFoot: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "1.5rem",
-    borderTop: "1px solid #e2e8f0",
-    backgroundColor: "#f8fafc",
+    padding: "10px 16px",
+    borderTop: "1px solid #f1f5f9",
+    background: "#f8fafc",
   },
-  paymentMethod: {
-    display: "flex",
-    gap: "0.5rem",
-    alignItems: "center",
-  },
-  paymentLabel: {
-    fontSize: "0.85rem",
+  paymentInfo: {
+    fontSize: "12px",
     color: "#64748b",
+    fontWeight: "500",
   },
-  paymentValue: {
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    color: "#1e293b",
-  },
-  totalSection: {
+  totalRow: {
     display: "flex",
-    gap: "0.75rem",
     alignItems: "center",
+    gap: "8px",
   },
   totalLabel: {
-    fontSize: "0.9rem",
+    fontSize: "12px",
     color: "#64748b",
   },
   totalAmount: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
+    fontSize: "16px",
+    fontWeight: "700",
     color: "#10b981",
   },
-  modalOverlay: {
+
+  // Modal
+  overlay: {
     position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    inset: 0,
+    backgroundColor: "rgba(0,0,0,0.45)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    padding: "1rem",
+    padding: "16px",
   },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: "16px",
-    maxWidth: "800px",
+  modal: {
+    background: "#ffffff",
+    borderRadius: "14px",
     width: "100%",
-    maxHeight: "90vh",
+    maxWidth: "680px",
+    maxHeight: "88vh",
     overflow: "auto",
-    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 20px 50px rgba(0,0,0,0.18)",
   },
-  modalHeader: {
+  modalHead: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "1.5rem",
-    borderBottom: "1px solid #e2e8f0",
+    padding: "14px 18px",
+    borderBottom: "1px solid #f1f5f9",
   },
   modalTitle: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
+    fontSize: "15px",
+    fontWeight: "700",
     color: "#1e293b",
-    margin: 0,
   },
   closeBtn: {
-    background: "none",
+    background: "#f1f5f9",
     border: "none",
-    fontSize: "1.5rem",
+    borderRadius: "6px",
+    width: "28px",
+    height: "28px",
     cursor: "pointer",
+    fontSize: "13px",
     color: "#64748b",
-    width: "32px",
-    height: "32px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: "8px",
-    transition: "all 0.2s",
   },
   modalBody: {
-    padding: "1.5rem",
-  },
-  modalImageSection: {
     display: "flex",
-    justifyContent: "center",
-    marginBottom: "2rem",
+    gap: "20px",
+    padding: "18px",
+    flexWrap: "wrap",
   },
-  modalImage: {
-    width: "300px",
-    height: "300px",
+  modalImgWrap: {
+    flexShrink: 0,
+  },
+  modalImg: {
+    width: "180px",
+    height: "180px",
     objectFit: "cover",
-    borderRadius: "12px",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0",
+    display: "block",
+  },
+  modalImgPlaceholder: {
+    width: "180px",
+    height: "180px",
+    borderRadius: "10px",
+    background: "#f1f5f9",
     border: "1px solid #e2e8f0",
   },
-  modalDetailsSection: {
+  modalDetails: {
+    flex: 1,
+    minWidth: "220px",
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
+    gap: "16px",
+  },
+  modalSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0",
+  },
+  modalSectionLabel: {
+    fontSize: "10px",
+    fontWeight: "700",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.8px",
+    margin: "0 0 8px 0",
   },
   detailRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "0.75rem 0",
-    borderBottom: "1px solid #f1f5f9",
+    padding: "7px 0",
+    borderBottom: "1px solid #f8fafc",
   },
   detailLabel: {
-    fontSize: "0.9rem",
-    fontWeight: 500,
+    fontSize: "12px",
     color: "#64748b",
+    fontWeight: "500",
   },
   detailValue: {
-    fontSize: "0.95rem",
-    fontWeight: 600,
+    fontSize: "12px",
+    fontWeight: "600",
     color: "#1e293b",
     textAlign: "right",
+    maxWidth: "60%",
+    wordBreak: "break-word",
   },
-  divider: {
-    height: "1px",
-    backgroundColor: "#e2e8f0",
-    margin: "1rem 0",
+
+  ratingSection: {
+    marginTop: "4px",
+    padding: "14px 0 4px",
+    borderTop: "1px solid #f1f5f9",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
   },
-  modalSubtitle: {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    color: "#1e293b",
-    marginBottom: "0.5rem",
+  ratedBadge: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  ratedLabel: {
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#10b981",
+  },
+  avgLabel: {
+    fontSize: "11px",
+    color: "#94a3b8",
+  },
+  submitRatingBtn: {
+    alignSelf: "flex-start",
+    padding: "7px 20px",
+    backgroundColor: "#f59e0b",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    fontSize: "13px",
+    fontWeight: "700",
+    fontFamily: "inherit",
+    transition: "opacity 0.15s",
   },
 };

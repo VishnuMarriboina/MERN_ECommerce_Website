@@ -1,0 +1,14 @@
+openapi: 3.0.0
+info:
+  title: eCommerce API Gateway
+  version: 1.0.0
+  description: Single entry point proxying to microservices
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Gateway health check
+      responses:
+        '200':
+          description: Gateway running

@@ -9,6 +9,12 @@ import Cart from "../components/Cart";
 import Profile from "../components/Profile";
 import Login from "../components/Login";
 import Orders from "../components/Orders";
+import ProductDetail from "../pages/shared/ProductDetail";
+import About from "../pages/info/About";
+import Contact from "../pages/info/Contact";
+import Shipping from "../pages/info/Shipping";
+import Returns from "../pages/info/Returns";
+import PrivacyPolicy from "../pages/info/PrivacyPolicy";
 import { Routes, Route } from "react-router-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Home from "./Home";
@@ -206,7 +212,12 @@ function Dashboard() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/orders" element={<Orders />} />
-
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/about"        element={<About />}         />
+          <Route path="/contact"      element={<Contact />}       />
+          <Route path="/shipping"     element={<Shipping />}      />
+          <Route path="/returns"      element={<Returns />}       />
+          <Route path="/privacy"      element={<PrivacyPolicy />} />
           {/* Sidebar layout */}
           <Route
             path="/*"

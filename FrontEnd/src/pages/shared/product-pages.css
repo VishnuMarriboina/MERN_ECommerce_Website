@@ -1,0 +1,77 @@
+/* Skeleton shimmer */
+@keyframes ps-shimmer {
+  0%   { background-position: -800px 0; }
+  100% { background-position:  800px 0; }
+}
+
+.ps-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2ecf5 50%, #f1f5f9 75%);
+  background-size: 1600px 100%;
+  animation: ps-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Product card grid ─────────────────────────────────────────── */
+.ps-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1280px) {
+  .ps-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .ps-grid { grid-template-columns: repeat(3, 1fr); gap: 0.875rem; }
+}
+
+@media (max-width: 600px) {
+  .ps-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+}
+
+@media (max-width: 380px) {
+  .ps-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+}
+
+/* ── Hero + main responsive padding ───────────────────────────── */
+@media (max-width: 640px) {
+  .ps-hero-inner { padding: 1.5rem 1rem 2rem !important; }
+  .ps-main       { padding: 1.25rem 1rem !important; }
+}
+
+/* ── Card hover lift ───────────────────────────────────────────── */
+.ps-card-wrap {
+  transition: transform 0.20s ease, box-shadow 0.20s ease;
+}
+.ps-card-wrap:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.13) !important;
+}
+
+/* ── Card image zoom on hover ──────────────────────────────────── */
+.ps-card-img {
+  transition: transform 0.35s ease;
+}
+.ps-card-wrap:hover .ps-card-img {
+  transform: scale(1.06);
+}
+
+/* ── Variant button hover ──────────────────────────────────────── */
+.ps-variant-btn {
+  transition: border-color 0.13s ease, background-color 0.13s ease, color 0.13s ease;
+}
+.ps-variant-btn:not(:disabled):hover {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+/* ── Add to cart hover ─────────────────────────────────────────── */
+.ps-add-btn {
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.ps-add-btn:not(:disabled):hover {
+  filter: brightness(1.07);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35) !important;
+  transform: translateY(-1px);
+}

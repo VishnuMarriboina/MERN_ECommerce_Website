@@ -1,7 +1,39 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUsers } from "../../../Redux/slices/AuthSlice";
+import { AVATAR_COLORS } from "../../../components/DataFolder/componentsData";
 
+/* ─── SVG Icons ───────────────────────────────────────────────────── */
+const EyeIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const SearchIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const ArrowRightIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/>
+    <polyline points="12 5 19 12 12 19"/>
+  </svg>
+);
+
+/* ─── Avatar helper ───────────────────────────────────────────────── */
+const avatarColor = (name) =>
+  AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+
+/* ─── Component ───────────────────────────────────────────────────── */
 export default function UserManagement() {
   const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,10 +44,8 @@ export default function UserManagement() {
 
   useEffect(() => {
     const loadUsers = async () => {
-      const res = await dispatch(fetchUsers());
-      if (res.success) {
-        setUsersData(res?.allUsers);
-      }
+      const data = await dispatch(fetchUsers()).unwrap();
+      setUsersData(data);
     };
 
     loadUsers();
@@ -46,61 +76,82 @@ export default function UserManagement() {
     return 0;
   });
   const getRoleBadgeStyle = (role) => {
-    return role === "Admin" ? styles.roleAdmin : styles.roleUser;
+    return role === "Admin" ? S.roleAdmin : S.roleUser;
   };
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p>Loading users...</p>
+      <div style={S.loadingContainer}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={S.spinner}></div>
+        <p style={{ color: "#475569", fontSize: 14, margin: 0 }}>Loading users…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={styles.errorContainer}>
-        <p style={styles.errorText}>Error: {error}</p>
+      <div style={S.loadingContainer}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p style={{ color: "#ef4444", fontSize: 14, margin: 0 }}>Error: {error}</p>
       </div>
     );
   }
 
+  const totalAdmins = users.filter((u) => u.User_Role === "Admin").length;
+  const totalRegular = users.filter((u) => u.User_Role !== "Admin").length;
+
   return (
-    <div style={styles.container}>
-      <div style={styles.contentHeader}>
-        <h1 style={styles.pageTitle}>User Management</h1>
-        <div style={styles.statsContainer}>
-          <div style={styles.statCard}>
-            <span style={styles.statLabel}>Total Users</span>
-            <span style={styles.statValue}>{users.length}</span>
+    <div style={S.container}>
+
+      {/* ── Page Header ── */}
+      <div style={S.pageHeader}>
+        <div>
+          <h1 style={S.pageTitle}>User Management</h1>
+          <p style={S.pageSubtitle}>View and manage platform users</p>
+        </div>
+        <div style={S.statsRow}>
+          <div style={S.statChip}>
+            <span style={S.statChipLabel}>Total</span>
+            <span style={S.statChipValue}>{users.length}</span>
           </div>
-          <div style={styles.statCard}>
-            <span style={styles.statLabel}>Admins</span>
-            <span style={styles.statValue}>
-              {users.filter((u) => u.User_Role === "Admin").length}
-            </span>
+          <div style={S.statChip}>
+            <span style={S.statChipLabel}>Admins</span>
+            <span style={S.statChipValue}>{totalAdmins}</span>
+          </div>
+          <div style={S.statChip}>
+            <span style={S.statChipLabel}>Users</span>
+            <span style={S.statChipValue}>{totalRegular}</span>
           </div>
         </div>
       </div>
 
-      {/* Search and Filter */}
-      <div style={styles.searchContainer}>
-        <input
-          type="text"
-          placeholder="Search by name, email, or phone..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
-        />
-        <div style={styles.roleFilters}>
+      {/* ── Search + Filter Toolbar ── */}
+      <div style={S.toolbar}>
+        {/* Search input with icon */}
+        <div style={S.searchWrapper}>
+          <span style={S.searchIconWrap}>
+            <SearchIcon />
+          </span>
+          <input
+            type="text"
+            placeholder="Search by name, email or phone…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={S.searchInput}
+          />
+        </div>
+
+        {/* Role filter pills */}
+        <div style={S.roleFilters}>
           {["All", "Admin", "User"].map((role) => (
             <button
               key={role}
-              style={{
-                ...styles.filterBtn,
-                ...(roleFilter === role && styles.filterBtnActive),
-              }}
+              style={roleFilter === role ? S.filterPillActive : S.filterPill}
               onClick={() => setRoleFilter(role)}
             >
               {role}
@@ -109,467 +160,382 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tableHeader}>
-              <th style={styles.th}>Name</th>
-              <th style={styles.th}>Email</th>
-              <th style={styles.th}>Phone</th>
-              <th style={styles.th}>Gender</th>
-              <th style={styles.th}>Age</th>
-              <th style={styles.th}>Role</th>
-              <th style={styles.th}>User ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.length === 0 ? (
-              <tr>
-                <td
-                  colSpan="7"
-                  style={{ ...styles.td, textAlign: "center", padding: "2rem" }}
-                >
-                  No users found
-                </td>
+      {/* ── Table Card ── */}
+      <div style={S.tableCard}>
+        <div style={S.tableWrapper}>
+          <table style={S.table}>
+            <thead>
+              <tr style={S.tableHeadRow}>
+                {["USER", "CONTACT", "GENDER", "AGE", "ROLE", "USER ID"].map((col) => (
+                  <th key={col} style={S.th}>{col}</th>
+                ))}
               </tr>
-            ) : (
-              sortedUsers.map((user) => (
-                <tr key={user._id} style={styles.tableRow}>
-                  <td style={styles.td}>
-                    <span style={styles.userName}>{user.name || "N/A"}</span>
-                  </td>
-                  <td style={styles.td}>{user.email || "N/A"}</td>
-                  <td style={styles.td}>{user.phoneNumber || "N/A"}</td>
-                  <td style={styles.td}>{user.gender || "N/A"}</td>
-                  <td style={styles.td}>{user.age || "N/A"}</td>
-                  <td style={styles.td}>
-                    <span style={getRoleBadgeStyle(user.User_Role)}>
-                      {user.User_Role || "User"}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={styles.userId}>
-                      {user._id?.slice(-8).toUpperCase()}
-                    </span>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={S.emptyCell}>
+                    <div style={S.emptyState}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 010 7.75"/>
+                      </svg>
+                      <p style={S.emptyTitle}>No users found</p>
+                      <p style={S.emptySubtitle}>Try a different search term or role filter</p>
+                    </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                sortedUsers.map((user) => {
+                  const initial = (user.name || "?")[0].toUpperCase();
+                  const bg = avatarColor(user.name);
+                  return (
+                    <tr
+                      key={user._id}
+                      style={S.tableRow}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      {/* USER column */}
+                      <td style={S.td}>
+                        <div style={S.userCell}>
+                          {/* Avatar */}
+                          <div style={{ ...S.avatar, backgroundColor: bg }}>
+                            {initial}
+                          </div>
+                          <div style={S.userInfo}>
+                            <span style={S.userName}>{user.name || "N/A"}</span>
+                            <span style={S.userEmail}>{user.email || "—"}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* CONTACT */}
+                      <td style={S.td}>
+                        <span style={S.contactText}>{user.phoneNumber || "—"}</span>
+                      </td>
+
+                      {/* GENDER */}
+                      <td style={S.td}>
+                        <span style={S.mutedText}>
+                          {user.gender
+                            ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1).toLowerCase()
+                            : "—"}
+                        </span>
+                      </td>
+
+                      {/* AGE */}
+                      <td style={S.td}>
+                        <span style={S.mutedText}>{user.age || "—"}</span>
+                      </td>
+
+                      {/* ROLE */}
+                      <td style={S.td}>
+                        <span style={getRoleBadgeStyle(user.User_Role)}>
+                          {user.User_Role || "User"}
+                        </span>
+                      </td>
+
+                      {/* USER ID */}
+                      <td style={S.td}>
+                        <span style={S.userId}>
+                          {user._id?.slice(-8).toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
-const styles = {
+/* ─── Styles ─────────────────────────────────────────────────────── */
+const S = {
   container: {
-    padding: "2rem",
-    backgroundColor: "#f7fafc",
+    padding: "28px 32px",
+    backgroundColor: "#f8fafc",
     minHeight: "100vh",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
+
+  /* Loading / Error */
   loadingContainer: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     minHeight: "60vh",
-    gap: "1rem",
+    gap: 12,
   },
   spinner: {
-    width: "50px",
-    height: "50px",
-    border: "5px solid #e2e8f0",
-    borderTop: "5px solid #667eea",
+    width: 36,
+    height: 36,
+    border: "3px solid #e2e8f0",
+    borderTopColor: "#6366f1",
     borderRadius: "50%",
-    animation: "spin 1s linear infinite",
+    animation: "spin 0.8s linear infinite",
   },
-  errorContainer: {
-    padding: "2rem",
-    textAlign: "center",
-  },
-  errorText: {
-    color: "#f56565",
-    fontSize: "1.1rem",
-  },
-  contentHeader: {
+
+  /* Page Header */
+  pageHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "2rem",
+    alignItems: "flex-start",
+    marginBottom: 24,
     flexWrap: "wrap",
-    gap: "1rem",
+    gap: 16,
   },
   pageTitle: {
-    fontSize: "1.8rem",
-    fontWeight: "700",
-    color: "#2d3748",
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#0f172a",
     margin: 0,
+    lineHeight: 1.3,
   },
-  statsContainer: {
+  pageSubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    margin: "4px 0 0 0",
+  },
+  statsRow: {
     display: "flex",
-    gap: "1rem",
-  },
-  statCard: {
-    backgroundColor: "white",
-    padding: "1rem 1.5rem",
-    borderRadius: "8px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  statLabel: {
-    fontSize: "0.85rem",
-    color: "#718096",
-    fontWeight: "500",
-  },
-  statValue: {
-    fontSize: "1.5rem",
-    fontWeight: "700",
-    color: "#2d3748",
-  },
-  filterContainer: {
-    display: "flex",
-    gap: "0.75rem",
-    marginBottom: "2rem",
+    gap: 10,
     flexWrap: "wrap",
   },
-  filterBtn: {
-    padding: "0.5rem 1.25rem",
-    border: "2px solid #e2e8f0",
-    backgroundColor: "#fff",
-    color: "#4a5568",
-    borderRadius: "20px",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-    transition: "all 0.2s",
-  },
-  filterBtnActive: {
-    backgroundColor: "#667eea",
-    color: "#fff",
-    // borderColor: "#667eea",
-  },
-  searchContainer: {
+  statChip: {
     display: "flex",
-    gap: "1rem",
-    marginBottom: "2rem",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    backgroundColor: "#fff",
+    border: "1px solid #f1f5f9",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+    borderRadius: 10,
+    padding: "10px 16px",
+    minWidth: 80,
+  },
+  statChipLabel: {
+    fontSize: 11,
+    color: "#94a3b8",
+    fontWeight: 500,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  statChipValue: {
+    fontSize: 17,
+    fontWeight: 700,
+    color: "#0f172a",
+    marginTop: 2,
+  },
+
+  /* Toolbar */
+  toolbar: {
+    display: "flex",
+    gap: 12,
+    marginBottom: 20,
     flexWrap: "wrap",
     alignItems: "center",
   },
-  searchInput: {
+  searchWrapper: {
+    position: "relative",
     flex: 1,
-    minWidth: "250px",
-    padding: "0.75rem 1rem",
-    border: "2px solid #e2e8f0",
-    borderRadius: "8px",
-    fontSize: "0.95rem",
+    minWidth: 240,
+  },
+  searchIconWrap: {
+    position: "absolute",
+    left: 10,
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#94a3b8",
+    display: "inline-flex",
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  searchInput: {
+    width: "100%",
+    paddingLeft: 36,
+    paddingRight: 12,
+    paddingTop: 0,
+    paddingBottom: 0,
+    height: 38,
+    border: "1.5px solid #e2e8f0",
+    borderRadius: 9,
+    fontSize: 13,
+    color: "#0f172a",
+    backgroundColor: "#fff",
     outline: "none",
+    boxSizing: "border-box",
   },
   roleFilters: {
     display: "flex",
-    gap: "0.5rem",
+    gap: 8,
+    flexWrap: "nowrap",
   },
-  tableContainer: {
+  filterPill: {
+    padding: "6px 16px",
+    border: "1.5px solid #e2e8f0",
     backgroundColor: "#fff",
-    borderRadius: "12px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    color: "#64748b",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+    outline: "none",
+    transition: "all 0.15s",
+  },
+  filterPillActive: {
+    padding: "6px 16px",
+    border: "1.5px solid #6366f1",
+    backgroundColor: "#eef2ff",
+    color: "#4338ca",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+    outline: "none",
+  },
+
+  /* Table Card */
+  tableCard: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    border: "1px solid #f1f5f9",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
     overflow: "hidden",
+  },
+  tableWrapper: {
     overflowX: "auto",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
   },
-  tableHeader: {
-    backgroundColor: "#f7fafc",
+  tableHeadRow: {
+    backgroundColor: "#f8fafc",
+    borderBottom: "1px solid #f1f5f9",
   },
   th: {
-    padding: "1rem",
+    padding: "12px 16px",
     textAlign: "left",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-    color: "#4a5568",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#94a3b8",
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
+    letterSpacing: "0.6px",
+    whiteSpace: "nowrap",
   },
   tableRow: {
-    borderBottom: "1px solid #e2e8f0",
-    transition: "background 0.2s",
+    borderBottom: "1px solid #f8fafc",
+    transition: "background 0.12s",
+    cursor: "default",
   },
   td: {
-    padding: "1rem",
-    fontSize: "0.95rem",
-    color: "#2d3748",
+    padding: "12px 16px",
+    fontSize: 13,
+    color: "#0f172a",
+    verticalAlign: "middle",
   },
-  orderId: {
-    fontFamily: "monospace",
-    fontWeight: "600",
-    color: "#667eea",
+
+  /* User cell */
+  userCell: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+  userInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  userName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#0f172a",
+  },
+  userEmail: {
+    fontSize: 11,
+    color: "#94a3b8",
+  },
+
+  /* Other cells */
+  contactText: {
+    fontSize: 13,
+    color: "#475569",
+  },
+  mutedText: {
+    fontSize: 13,
+    color: "#94a3b8",
+    textTransform: "capitalize",
   },
   userId: {
     fontFamily: "monospace",
-    fontSize: "0.85rem",
-    color: "#718096",
+    fontSize: 12,
+    color: "#94a3b8",
+    letterSpacing: "0.3px",
   },
-  userName: {
-    fontWeight: "600",
-    color: "#2d3748",
-  },
-  amount: {
-    fontWeight: "700",
-    color: "#48bb78",
-  },
-  paymentInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-  },
-  paymentMode: {
-    fontSize: "0.85rem",
-    color: "#718096",
-  },
-  statusConfirmed: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#c6f6d5",
-    color: "#2f855a",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  statusShipped: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#bee3f8",
-    color: "#2c5282",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  statusPending: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#feebc8",
-    color: "#c05621",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  statusDelivered: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#b2f5ea",
-    color: "#234e52",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  statusCancelled: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#fed7d7",
-    color: "#c53030",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
+
+  /* Role badges */
   roleAdmin: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#fbb6ce",
-    color: "#97266d",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+    display: "inline-block",
+    padding: "3px 10px",
+    backgroundColor: "#fdf2f8",
+    color: "#9d174d",
+    border: "1px solid #fbcfe8",
+    borderRadius: 20,
+    fontSize: 11,
+    fontWeight: 600,
   },
   roleUser: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#e6fffa",
-    color: "#234e52",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
+    display: "inline-block",
+    padding: "3px 10px",
+    backgroundColor: "#f0fdf4",
+    color: "#166534",
+    border: "1px solid #bbf7d0",
+    borderRadius: 20,
+    fontSize: 11,
+    fontWeight: 600,
   },
-  viewBtn: {
-    padding: "0.5rem 1rem",
-    backgroundColor: "#667eea",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-    transition: "all 0.2s",
+
+  /* Empty state */
+  emptyCell: {
+    padding: "48px 16px",
+    textAlign: "center",
   },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: "1rem",
-  },
-  modal: {
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    width: "90%",
-    maxWidth: "800px",
-    maxHeight: "90vh",
+  emptyState: {
     display: "flex",
     flexDirection: "column",
-    boxShadow: "0 20px 25px rgba(0,0,0,0.15)",
-  },
-  modalHeader: {
-    padding: "1.5rem",
-    borderBottom: "1px solid #e2e8f0",
-    display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
-  modalTitle: {
-    fontSize: "1.5rem",
-    fontWeight: "700",
-    color: "#2d3748",
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#475569",
     margin: 0,
   },
-  closeBtn: {
-    border: "none",
-    backgroundColor: "transparent",
-    cursor: "pointer",
-    color: "#718096",
-    fontSize: "2rem",
-    width: "40px",
-    height: "40px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalBody: {
-    padding: "1.5rem",
-    overflowY: "auto",
-    flex: 1,
-  },
-  modalSection: {
-    marginBottom: "2rem",
-  },
-  sectionTitle: {
-    fontSize: "1.1rem",
-    fontWeight: "600",
-    color: "#2d3748",
-    marginBottom: "1rem",
-    borderBottom: "2px solid #667eea",
-    paddingBottom: "0.5rem",
-  },
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "1rem",
-  },
-  infoItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-  },
-  infoLabel: {
-    fontSize: "0.85rem",
-    color: "#718096",
-    fontWeight: "500",
-  },
-  infoValue: {
-    fontSize: "0.95rem",
-    color: "#2d3748",
-    fontWeight: "600",
-  },
-  itemsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  itemCard: {
-    padding: "1rem",
-    backgroundColor: "#f7fafc",
-    borderRadius: "8px",
-    border: "1px solid #e2e8f0",
-  },
-  itemHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "0.75rem",
-  },
-  itemBrand: {
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#2d3748",
-  },
-  itemPrice: {
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#48bb78",
-  },
-  variantBadges: {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "0.75rem",
-    flexWrap: "wrap",
-  },
-  badge: {
-    padding: "0.25rem 0.75rem",
-    backgroundColor: "#e6fffa",
-    color: "#234e52",
-    borderRadius: "12px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
-  },
-  itemDetails: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-    fontSize: "0.9rem",
-    color: "#4a5568",
-    paddingTop: "0.75rem",
-    borderTop: "1px solid #e2e8f0",
-  },
-  itemSubtotal: {
-    fontWeight: "700",
-    color: "#667eea",
-    fontSize: "1rem",
-  },
-  totalSection: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "1.5rem",
-    backgroundColor: "#f7fafc",
-    borderRadius: "8px",
-    marginTop: "1rem",
-  },
-  totalLabel: {
-    fontSize: "1.25rem",
-    fontWeight: "600",
-    color: "#2d3748",
-  },
-  totalValue: {
-    fontSize: "2rem",
-    fontWeight: "700",
-    color: "#48bb78",
-  },
-  modalFooter: {
-    padding: "1.5rem",
-    borderTop: "1px solid #e2e8f0",
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  closeModalBtn: {
-    padding: "0.75rem 1.5rem",
-    border: "none",
-    backgroundColor: "#667eea",
-    color: "#fff",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "0.95rem",
-    fontWeight: "600",
+  emptySubtitle: {
+    fontSize: 13,
+    color: "#94a3b8",
+    margin: 0,
   },
 };

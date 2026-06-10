@@ -1,86 +1,83 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { FOOTER_LINKS } from "./DataFolder/dashboardData";
 
 export default function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <>
-      {/* Footer */}
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerTitle}>About Us</h4>
-            <p style={styles.footerText}>
-              Your one-stop shop for quality fashion
-            </p>
-          </div>
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerTitle}>Customer Service</h4>
-            <ul style={styles.footerList}>
-              <li style={styles.footerListItem}>Contact Us</li>
-              <li style={styles.footerListItem}>Shipping Info</li>
-              <li style={styles.footerListItem}>Returns</li>
-            </ul>
-          </div>
-          <div style={styles.footerSection}>
-            <h4 style={styles.footerTitle}>Follow Us</h4>
-            <p style={styles.footerText}>Stay connected on social media</p>
-          </div>
+    <footer style={styles.footer}>
+      <div style={styles.inner}>
+        <div style={styles.brand}>
+          <span style={styles.brandName}>Vishnu's Store</span>
+          <span style={styles.divider}>|</span>
+          <span style={styles.tagline}>Quality Fashion &amp; Accessories</span>
         </div>
-        <div style={styles.footerBottom}>
-          <p style={styles.footerCopyright}>
-            © 2024 Vishnu's Store. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </>
+
+        <nav style={styles.links}>
+          {FOOTER_LINKS.map(({ label, to }) => (
+            <Link key={to} to={to} style={styles.link}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <span style={styles.copyright}>© {year} All rights reserved.</span>
+      </div>
+    </footer>
   );
 }
 
 const styles = {
   footer: {
-    backgroundColor: "#2d3748",
-    color: "#fff",
-    padding: "3rem 2rem 1rem",
+    backgroundColor: "#1e293b",
+    borderTop: "1px solid #334155",
   },
-  footerContent: {
+  inner: {
     maxWidth: "1200px",
     margin: "0 auto",
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "2rem",
-    marginBottom: "2rem",
-  },
-  footerSection: {
+    padding: "14px 24px",
     display: "flex",
-    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: "12px",
   },
-  footerTitle: {
-    fontSize: "1.1rem",
-    fontWeight: "bold",
-    marginBottom: "1rem",
+  brand: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
   },
-  footerText: {
-    color: "#cbd5e0",
-    fontSize: "0.9rem",
-    lineHeight: "1.6",
+  brandName: {
+    color: "#f1f5f9",
+    fontWeight: "700",
+    fontSize: "14px",
+    letterSpacing: "0.3px",
   },
-  footerList: {
-    listStyle: "none",
-    padding: 0,
-    margin: 0,
+  divider: {
+    color: "#475569",
+    fontSize: "14px",
   },
-  footerListItem: {
-    color: "#cbd5e0",
-    fontSize: "0.9rem",
-    marginBottom: "0.5rem",
+  tagline: {
+    color: "#94a3b8",
+    fontSize: "13px",
+  },
+  links: {
+    display: "flex",
+    alignItems: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+  },
+  link: {
+    color: "#94a3b8",
+    fontSize: "13px",
+    textDecoration: "none",
+    transition: "color 0.2s",
     cursor: "pointer",
   },
-  footerBottom: {
-    borderTop: "1px solid #4a5568",
-    paddingTop: "1.5rem",
-    textAlign: "center",
-  },
-  footerCopyright: {
-    color: "#cbd5e0",
-    fontSize: "0.85rem",
+  copyright: {
+    color: "#64748b",
+    fontSize: "12px",
+    whiteSpace: "nowrap",
   },
 };
