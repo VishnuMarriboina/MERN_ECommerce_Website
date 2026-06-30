@@ -274,64 +274,65 @@ const logger       = require("@ecommerce/shared/src/utils/logger");
 
 ## Environment Variables
 
-### Shared (`.env.shared`)
-```
-NODE_ENV=development
-MDB_URI=mongodb://localhost:27017/myStore
-JWT_SECRET=your_jwt_secret_here
-JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
-```
+Each service loads `.env.development` when `NODE_ENV=development` (the default). In production there is no `.env.production` file — environment variables are injected directly by the hosting platform (Docker, cloud provider, CI/CD). `dotenv` silently does nothing when the file is absent, so `process.env` is already populated by the platform.
 
-### gateway/.env
+Use the `.env.example` in each service directory as the full variable reference.
+
+### gateway/.env.development
 ```
 PORT=3000
-ALLOWED_ORIGINS=http://localhost:5173,https://yourdomain.com
+NODE_ENV=development
+ALLOWED_ORIGINS=http://localhost:5173
 
-# Single instance (development)
 AUTH_SERVICE_URLS=http://localhost:3001
 PRODUCT_SERVICE_URLS=http://localhost:3002
 CART_SERVICE_URLS=http://localhost:3003
 ORDER_SERVICE_URLS=http://localhost:3004
-
-# Multiple instances — comma-separate to load balance (production)
-# PRODUCT_SERVICE_URLS=http://localhost:3002,http://localhost:3012,http://localhost:3022
 ```
 
-### services/auth-service/.env
+### services/auth-service/.env.development
 ```
 PORT=3001
-MDB_URI=mongodb://localhost:27017/myStore
-JWT_SECRET=your_jwt_secret_here
-JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
 NODE_ENV=development
+MDB_URI=mongodb://localhost:27017/myStore
+JWT_SECRET=...
+JWT_REFRESH_SECRET=...
 AWS_REGION=ap-south-1
-AWS_ACCESS_KEY_ID=your_aws_access_key_here
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key_here
-AWS_S3_BUCKET=your_s3_bucket_name_here
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_S3_BUCKET=...
 ```
 
-### services/product-service/.env
+### services/product-service/.env.development
 ```
 PORT=3002
+NODE_ENV=development
 MDB_URI=mongodb://localhost:27017/myStore
-JWT_SECRET=your_jwt_secret_here
+JWT_SECRET=...
 ```
 
-### services/cart-service/.env
+### services/cart-service/.env.development
 ```
 PORT=3003
+NODE_ENV=development
 MDB_URI=mongodb://localhost:27017/myStore
-JWT_SECRET=your_jwt_secret_here
+JWT_SECRET=...
 PRODUCT_SERVICE_URL=http://localhost:3002
 ORDER_SERVICE_URL=http://localhost:3004
+PRODUCT_GRPC_URL=localhost:50052
 ```
 
-### services/order-service/.env
+### services/order-service/.env.development
 ```
 PORT=3004
+NODE_ENV=development
 MDB_URI=mongodb://localhost:27017/myStore
-JWT_SECRET=your_jwt_secret_here
+JWT_SECRET=...
 ```
+
+### Production
+
+Set these same variables as environment variables on your server / Docker container / CI pipeline. No `.env.production` file is used or needed.
 
 ---
 
@@ -349,15 +350,15 @@ npm install
 This installs all workspace packages and links `@ecommerce/shared` across all services via npm workspaces — no manual linking needed.
 
 ### 2. Configure environment
-The `.env` files are pre-created from `.env.example`. Fill in real values:
+Fill in real values in the `.env.development` file for each service:
 ```
-Backend/.env.shared                      ← shared MongoDB URI + JWT secrets
-Backend/gateway/.env                     ← CORS origins + downstream URLs
-Backend/services/auth-service/.env       ← auth secrets + AWS (optional)
-Backend/services/product-service/.env    ← MongoDB URI + JWT
-Backend/services/cart-service/.env       ← MongoDB URI + JWT + service URLs
-Backend/services/order-service/.env      ← MongoDB URI + JWT
+gateway/.env.development
+services/auth-service/.env.development
+services/product-service/.env.development
+services/cart-service/.env.development
+services/order-service/.env.development
 ```
+Use the `.env.example` in each directory as a reference. In production, set the same variables directly on your server or container — no `.env.production` file is used.
 
 ### 3. Seed the database (optional)
 Populates MongoDB with sample users, products, and orders. Safe to run multiple times.

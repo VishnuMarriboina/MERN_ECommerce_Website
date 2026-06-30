@@ -1,5 +1,5 @@
 const dotenv = require("dotenv");
-dotenv.config();
+dotenv.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
 
 const requiredEnvVars = ["MDB_URI", "JWT_SECRET", "JWT_REFRESH_SECRET"];
 requiredEnvVars.forEach((key) => {

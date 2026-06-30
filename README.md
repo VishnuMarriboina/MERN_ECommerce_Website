@@ -110,16 +110,26 @@ npm install
 
 ### 2. Configure environment variables
 
-The `.env` files are pre-created from `.env.example`. Fill in real values:
+Each service loads `.env.development` or `.env.production` based on `NODE_ENV` (defaults to `development`). Fill in real values for each environment:
 
+**Development** — fill in real values in `.env.development` for each service:
 ```
-Backend/.env.shared                      ← shared MongoDB URI + JWT secrets
-Backend/gateway/.env                     ← CORS origins + service URLs (supports comma-separated for load balancing)
-Backend/services/auth-service/.env       ← auth secrets + AWS S3 (optional)
-Backend/services/product-service/.env    ← MongoDB URI + JWT secret
-Backend/services/cart-service/.env       ← MongoDB URI + JWT + service URLs
-Backend/services/order-service/.env      ← MongoDB URI + JWT secret
+Backend/gateway/.env.development             ← CORS origins + service URLs
+Backend/services/auth-service/.env.development   ← auth secrets + AWS S3 (optional)
+Backend/services/product-service/.env.development
+Backend/services/cart-service/.env.development   ← MongoDB URI + JWT + service URLs
+Backend/services/order-service/.env.development
+FrontEnd/.env.development                    ← VITE_API_URL=http://localhost:3000/api
 ```
+
+**Production (backend)** — no `.env.production` file is used. Set the same variables directly on your server, Docker container, or CI/CD pipeline. `dotenv` silently does nothing when the file is absent, so `process.env` is already populated by the platform.
+
+**Production (frontend)** — update `FrontEnd/.env.production` with your real domain:
+```
+FrontEnd/.env.production                     ← VITE_API_URL=https://yourdomain.com/api
+```
+
+Use `.env.example` files as a reference for what each field expects.
 
 Generate secure secrets:
 ```bash
@@ -172,13 +182,13 @@ docker-compose up --build
 ### 5. Start the frontend
 
 ```bash
-cd Frontend
+cd FrontEnd
 npm install
-npm run dev
-# → http://localhost:5173
+npm run dev      # loads FrontEnd/.env.development  → http://localhost:5173
+npm run build    # loads FrontEnd/.env.production   → dist/
 ```
 
-The frontend talks to the API Gateway at `http://localhost:3000/api`.
+The API base URL is read from `VITE_API_URL` in the active env file — no code change needed to switch environments.
 
 ### 6. Verify services are running
 

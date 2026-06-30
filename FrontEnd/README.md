@@ -124,7 +124,7 @@ Frontend/
     │   └── productStyles.js        # Legacy product style constants
     │
     └── utils/
-        ├── APIKit.jsx              # Axios instance — baseURL: http://localhost:3000/api
+        ├── APIKit.jsx              # Axios instance — baseURL from VITE_API_URL env var
         ├── endpoints.js            # Centralised API endpoint constants
         ├── ProtectedRoute.jsx      # Redirects unauthenticated users to /login
         ├── RefreshToken.jsx        # Axios interceptor — auto-refreshes expired access tokens
@@ -247,8 +247,7 @@ npm run lint      # Run ESLint
 
 ## Connecting to the Backend
 
-The Axios instance in `src/utils/APIKit.jsx` points to `http://localhost:3000/api` (the API Gateway).  
-Start the backend before running the frontend.
+The Axios instance in `src/utils/APIKit.jsx` reads `import.meta.env.VITE_API_URL` (set in the active env file) to determine the API Gateway URL. Start the backend before running the frontend.
 
 `RefreshToken.jsx` automatically intercepts `401` responses and retries requests with a refreshed access token — no manual token management needed.
 
@@ -258,5 +257,17 @@ See [Backend setup instructions](../Backend/README.md) for how to start all serv
 
 ## Environment
 
-No `.env` file is required for the frontend in development — the gateway URL is hardcoded in `APIKit.jsx`.  
-To point at a different backend, update the `baseURL` value in that file.
+Vite loads `.env.development` for `npm run dev` and `.env.production` for `npm run build`.
+
+| File | `VITE_API_URL` |
+|---|---|
+| `.env.development` | `http://localhost:3000/api` |
+| `.env.production` | `https://yourdomain.com/api` |
+
+Neither file is committed to git. Update `FrontEnd/.env.production` with your real production domain before building for deployment.
+
+```bash
+npm run dev      # → http://localhost:5173, uses .env.development
+npm run build    # → dist/, uses .env.production
+npm run preview  # preview the production build locally
+```
