@@ -1,6 +1,7 @@
 require("./config/env.config");
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const { allowedOrigins } = require("./config/env.config");
 const rateLimiter = require("./middlewares/rateLimiter.middleware");
 const errorMiddleware = require("./middlewares/error.middleware");
@@ -11,6 +12,8 @@ const orderRoutes = require("./routes/order.routes");
 const { health } = require("./controllers/gateway.controller");
 
 const app = express();
+
+app.use(helmet());
 
 app.use(cors({
   origin: (origin, callback) => {

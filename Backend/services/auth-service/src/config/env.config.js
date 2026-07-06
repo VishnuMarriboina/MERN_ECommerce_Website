@@ -1,10 +1,8 @@
 const dotenv = require("dotenv");
 dotenv.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
 
-const requiredEnvVars = ["MDB_URI", "JWT_SECRET", "JWT_REFRESH_SECRET"];
-requiredEnvVars.forEach((key) => {
-  if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
-});
+const { validateEnv } = require("@ecommerce/shared/src/utils/validateEnv");
+validateEnv(["MDB_URI", "JWT_SECRET", "JWT_REFRESH_SECRET"], "auth-service");
 
 module.exports = {
   port: process.env.PORT || 3001,

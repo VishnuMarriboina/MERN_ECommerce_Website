@@ -5,6 +5,7 @@ module.exports = {
   orderServiceUrl: process.env.ORDER_SERVICE_URL || "http://localhost:3004",
   proxyOptions: {
     parseReqBody: false,
+    timeout: Number(process.env.PROXY_TIMEOUT_MS) || 10000,
     proxyReqPathResolver: (req) => req.originalUrl,
     userResHeaderDecorator: (headers, userReq, userRes) => {
       const corsHeaders = [

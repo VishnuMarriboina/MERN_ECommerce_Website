@@ -54,6 +54,28 @@ const decrementStock = async (req, res) => {
   }
 };
 
+// PUT /internal/stock/restore
+// Compensating action for a checkout that decremented stock but failed to create the order.
+const restoreStock = async (req, res) => {
+  try {
+    const items = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Expected an array of { productId, variantId, quantity }" });
+    }
+    const ops = items.map(({ productId, variantId, quantity }) => {
+      if (!productId || !variantId || !quantity) return Promise.resolve();
+      return getModel().findOneAndUpdate(
+        { _id: productId, "variants._id": variantId },
+        { $inc: { "variants.$.count": quantity } }
+      );
+    });
+    await Promise.allSettled(ops);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // PUT /internal/purchase/increment
 const incrementPurchaseCount = async (req, res) => {
   try {
@@ -75,4 +97,4 @@ const incrementPurchaseCount = async (req, res) => {
   }
 };
 
-module.exports = { getStock, getProduct, decrementStock, incrementPurchaseCount };
+module.exports = { getStock, getProduct, decrementStock, restoreStock, incrementPurchaseCount };

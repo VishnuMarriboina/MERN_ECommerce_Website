@@ -1,6 +1,7 @@
 const cartRepository = require("../repositories/cart.repository");
 const { productServiceUrl } = require("../config/env.config");
 const CART_MSGS = require("../constants/cart.messages");
+const { fetchWithTimeout } = require("@ecommerce/shared/src/utils/httpClient");
 
 const pluralToSingular = {
   shirts: "shirt",
@@ -24,7 +25,7 @@ const normalizeModel = (model) => {
 };
 
 const getVariantStock = async (model, productId, variantId) => {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${productServiceUrl}/internal/stock/${model}/${productId}/${variantId}`,
   );
   const data = await res.json();
@@ -83,7 +84,7 @@ const getCart = async (userId) => {
 
   const items = [];
   for (const item of cart.items) {
-    const productRes = await fetch(
+    const productRes = await fetchWithTimeout(
       `${productServiceUrl}/internal/products/${item.productModel}/${item.productId}`,
     );
     if (!productRes.ok) continue;

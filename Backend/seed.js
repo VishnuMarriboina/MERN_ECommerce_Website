@@ -1,18 +1,36 @@
 /**
- * Seed script — populates the database using the unified GenericProduct model.
+ * Seed script — populates each service's own database (auth_db, product_db,
+ * order_db) using the unified GenericProduct model.
  * Run from the Backend folder: node seed.js
  */
 
-const bcrypt  = require("bcryptjs");
-const dotenv  = require("dotenv");
+const bcrypt   = require("bcryptjs");
+const dotenv   = require("dotenv");
+const mongoose = require("mongoose");
 dotenv.config({ path: ".env.shared" });
 
-const User                = require("./services/auth-service/src/models/user.model");
-const { GenericProduct }  = require("./services/product-service/src/models/generic.model");
-const { CategorySchemaModel } = require("./services/product-service/src/models/categorySchema.model");
-const Order               = require("./services/order-service/src/models/order.model");
+// Each service now owns its own database (see scripts/migrate-split-databases.js),
+// so seeding has to open one connection per target DB and recompile each model
+// against it — a model bound to mongoose's default connection can't be pointed
+// at a different DB after the fact, but its .schema/.modelName/.collection.name
+// can be reused to compile an equivalent model on a fresh connection.
+const UserModel                = require("./services/auth-service/src/models/user.model");
+const { GenericProduct: GenericProductModel } = require("./services/product-service/src/models/generic.model");
+const { CategorySchemaModel: CategorySchemaModelDef } = require("./services/product-service/src/models/categorySchema.model");
+const OrderModel                = require("./services/order-service/src/models/order.model");
 
-const MONGO_URI = process.env.MDB_URI || "mongodb://localhost:27017/newShop";
+const AUTH_URI    = process.env.AUTH_MDB_URI    || "mongodb://localhost:27017/auth_db";
+const PRODUCT_URI = process.env.PRODUCT_MDB_URI || "mongodb://localhost:27017/product_db";
+const ORDER_URI   = process.env.ORDER_MDB_URI   || "mongodb://localhost:27017/order_db";
+
+const authConn    = mongoose.createConnection(AUTH_URI);
+const productConn = mongoose.createConnection(PRODUCT_URI);
+const orderConn   = mongoose.createConnection(ORDER_URI);
+
+const User                = authConn.model(UserModel.modelName, UserModel.schema, UserModel.collection.name);
+const GenericProduct      = productConn.model(GenericProductModel.modelName, GenericProductModel.schema, GenericProductModel.collection.name);
+const CategorySchemaModel = productConn.model(CategorySchemaModelDef.modelName, CategorySchemaModelDef.schema, CategorySchemaModelDef.collection.name);
+const Order                = orderConn.model(OrderModel.modelName, OrderModel.schema, OrderModel.collection.name);
 
 /* ─── Users ─────────────────────────────────────────────────────── */
 const usersData = [
@@ -180,10 +198,11 @@ const makeHistory = (status, baseDate) => {
 
 /* ─── Main ───────────────────────────────────────────────────────── */
 async function seed() {
-  const allModels = [User, GenericProduct, CategorySchemaModel, Order];
-  const mongooseInstances = [...new Set(allModels.map(m => m.db.base))];
-  await Promise.all(mongooseInstances.map(m => m.connect(MONGO_URI)));
-  console.log(`✅ Connected to MongoDB: ${MONGO_URI}`);
+  await Promise.all([authConn.asPromise(), productConn.asPromise(), orderConn.asPromise()]);
+  console.log("✅ Connected to MongoDB:");
+  console.log(`   auth    → ${AUTH_URI}`);
+  console.log(`   product → ${PRODUCT_URI}`);
+  console.log(`   order   → ${ORDER_URI}`);
 
   const stats = { users:{inserted:0,skipped:0}, schemas:{inserted:0,skipped:0}, products:{inserted:0,skipped:0}, orders:{inserted:0,skipped:0} };
 
@@ -308,7 +327,7 @@ async function seed() {
   console.log("  User 2  → rahul.verma@gmail.com  / User@456");
   console.log("  User 3  → ananya.k@gmail.com     / User@789");
 
-  await Promise.all(mongooseInstances.map(m => m.disconnect()));
+  await Promise.all([authConn.close(), productConn.close(), orderConn.close()]);
   console.log("\n🔌 Disconnected from MongoDB");
 }
 

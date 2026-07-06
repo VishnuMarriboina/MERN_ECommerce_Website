@@ -294,7 +294,7 @@ ORDER_SERVICE_URLS=http://localhost:3004
 ```
 PORT=3001
 NODE_ENV=development
-MDB_URI=mongodb://localhost:27017/myStore
+MDB_URI=mongodb://localhost:27017/auth_db
 JWT_SECRET=...
 JWT_REFRESH_SECRET=...
 AWS_REGION=ap-south-1
@@ -307,7 +307,7 @@ AWS_S3_BUCKET=...
 ```
 PORT=3002
 NODE_ENV=development
-MDB_URI=mongodb://localhost:27017/myStore
+MDB_URI=mongodb://localhost:27017/product_db
 JWT_SECRET=...
 ```
 
@@ -315,7 +315,7 @@ JWT_SECRET=...
 ```
 PORT=3003
 NODE_ENV=development
-MDB_URI=mongodb://localhost:27017/myStore
+MDB_URI=mongodb://localhost:27017/cart_db
 JWT_SECRET=...
 PRODUCT_SERVICE_URL=http://localhost:3002
 ORDER_SERVICE_URL=http://localhost:3004
@@ -326,7 +326,7 @@ PRODUCT_GRPC_URL=localhost:50052
 ```
 PORT=3004
 NODE_ENV=development
-MDB_URI=mongodb://localhost:27017/myStore
+MDB_URI=mongodb://localhost:27017/order_db
 JWT_SECRET=...
 ```
 

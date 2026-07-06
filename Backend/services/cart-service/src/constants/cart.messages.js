@@ -10,4 +10,5 @@ module.exports = {
   CART_EMPTY: "Cart empty",
   OUT_OF_STOCK: "All items are out of stock",
   INVALID_MODEL: "Invalid product model",
+  ORDER_CREATE_FAILED: "Failed to place order, please try again",
 };
