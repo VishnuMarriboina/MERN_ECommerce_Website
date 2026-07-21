@@ -1,0 +1,223 @@
+# Render Blueprint — deploys two fully independent stacks (prod + staging)
+# from the same repo. Each stack has its own DB, JWT secrets, and CORS origin,
+# so a login/token from one is worthless on the other.
+#
+# SETUP STEPS AFTER FIRST SYNC:
+#   1. Create a `staging` branch in git (the *-staging services deploy from it;
+#      *-prod services deploy from `main`).
+#   2. In the Render dashboard, open each envVarGroup (prod-secrets /
+#      staging-secrets) and fill in real values for JWT_SECRET, JWT_REFRESH_SECRET.
+#   3. Fill in every var marked `sync: false` below on each individual service
+#      (Mongo URI, AWS creds, ALLOWED_ORIGINS).
+#   4. Deploy the 4 backend services in each stack first, copy the .onrender.com
+#      URL Render assigns each one, then fill in the gateway's *_SERVICE_URLS
+#      and cart-service's PRODUCT_SERVICE_URL/ORDER_SERVICE_URL with those URLs.
+#      Redeploy the gateway + cart-service after.
+#
+# Rename the "-prod"/"-staging" suffixes if you'd rather Render pick the names.
+
+envVarGroups:
+  - name: prod-secrets
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+
+  - name: staging-secrets
+    envVars:
+      - key: NODE_ENV
+        value: production # keep "production" so secure cookies still work over Render's HTTPS
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+
+services:
+  # ────────────────────────────── PRODUCTION ──────────────────────────────
+  - type: web
+    name: gateway-prod
+    runtime: node
+    rootDir: Backend
+    branch: main
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:gateway
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: prod-secrets
+      - key: ALLOWED_ORIGINS
+        sync: false # e.g. https://your-prod-frontend.com
+      - key: PROXY_TIMEOUT_MS
+        value: "10000"
+      - key: AUTH_SERVICE_URLS
+        sync: false # fill with auth-service-prod's Render URL after it deploys
+      - key: PRODUCT_SERVICE_URLS
+        sync: false
+      - key: CART_SERVICE_URLS
+        sync: false
+      - key: ORDER_SERVICE_URLS
+        sync: false
+
+  - type: web
+    name: auth-service-prod
+    runtime: node
+    rootDir: Backend
+    branch: main
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:auth
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: prod-secrets
+      - key: MDB_URI
+        sync: false # separate prod Mongo DB
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+
+  - type: web
+    name: product-service-prod
+    runtime: node
+    rootDir: Backend
+    branch: main
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:product
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: prod-secrets
+      - key: MDB_URI
+        sync: false
+
+  - type: web
+    name: cart-service-prod
+    runtime: node
+    rootDir: Backend
+    branch: main
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:cart
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: prod-secrets
+      - key: MDB_URI
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false # fill with product-service-prod's Render URL after it deploys
+      - key: ORDER_SERVICE_URL
+        sync: false # fill with order-service-prod's Render URL after it deploys
+
+  - type: web
+    name: order-service-prod
+    runtime: node
+    rootDir: Backend
+    branch: main
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:order
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: prod-secrets
+      - key: MDB_URI
+        sync: false
+
+  # ─────────────────────────────── STAGING ────────────────────────────────
+  - type: web
+    name: gateway-staging
+    runtime: node
+    rootDir: Backend
+    branch: staging
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:gateway
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: staging-secrets
+      - key: ALLOWED_ORIGINS
+        sync: false # e.g. https://your-staging-frontend.com
+      - key: PROXY_TIMEOUT_MS
+        value: "10000"
+      - key: AUTH_SERVICE_URLS
+        sync: false
+      - key: PRODUCT_SERVICE_URLS
+        sync: false
+      - key: CART_SERVICE_URLS
+        sync: false
+      - key: ORDER_SERVICE_URLS
+        sync: false
+
+  - type: web
+    name: auth-service-staging
+    runtime: node
+    rootDir: Backend
+    branch: staging
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:auth
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: staging-secrets
+      - key: MDB_URI
+        sync: false # separate staging Mongo DB — never point this at prod
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+
+  - type: web
+    name: product-service-staging
+    runtime: node
+    rootDir: Backend
+    branch: staging
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:product
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: staging-secrets
+      - key: MDB_URI
+        sync: false
+
+  - type: web
+    name: cart-service-staging
+    runtime: node
+    rootDir: Backend
+    branch: staging
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:cart
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: staging-secrets
+      - key: MDB_URI
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+
+  - type: web
+    name: order-service-staging
+    runtime: node
+    rootDir: Backend
+    branch: staging
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:order
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: staging-secrets
+      - key: MDB_URI
+        sync: false

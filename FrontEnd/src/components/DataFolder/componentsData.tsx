@@ -5,7 +5,7 @@ import shirt from "../../assets/shirt_icon.png";
 import Shoe from "../../assets/shoe.jpg";
 import Belt from "../../assets/Belt.jpg";
 import Watch from "../../assets/watch.jpg";
-import Sandal from "../../assets/slippers.webp";
+import Sandal from "../../assets/Slippers.webp";
 import tshirt from "../../assets/Tshirt.jpg";
 
 /* ─── Cart ───────────────────────────────────────────────────────────── */
