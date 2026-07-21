@@ -5,7 +5,7 @@ export const refreshAccessToken = async () => {
 
   try {
     const response = await axios.post(
-      "http://localhost:3000/api/auth/refresh-token",
+      `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
       {},
       { withCredentials: true } // ✅ Sends HTTP-only refresh token cookie
     );
