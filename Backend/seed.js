@@ -8,6 +8,12 @@ const bcrypt   = require("bcryptjs");
 const dotenv   = require("dotenv");
 const mongoose = require("mongoose");
 dotenv.config({ path: ".env.shared" });
+dotenv.config({ path: ".env.secrets" });
+
+const { buildMongoUri } = require("./packages/shared/src/utils/buildMongoUri");
+const { configureDns } = require("./packages/shared/src/utils/configureDns");
+configureDns();
+const mongoCreds = { username: process.env.DB_USERNAME, password: process.env.DB_PASSWORD, host: process.env.MDB_HOST };
 
 // Each service now owns its own database (see scripts/migrate-split-databases.js),
 // so seeding has to open one connection per target DB and recompile each model
@@ -19,9 +25,9 @@ const { GenericProduct: GenericProductModel } = require("./services/product-serv
 const { CategorySchemaModel: CategorySchemaModelDef } = require("./services/product-service/src/models/categorySchema.model");
 const OrderModel                = require("./services/order-service/src/models/order.model");
 
-const AUTH_URI    = process.env.AUTH_MDB_URI    || "mongodb://localhost:27017/auth_db";
-const PRODUCT_URI = process.env.PRODUCT_MDB_URI || "mongodb://localhost:27017/product_db";
-const ORDER_URI   = process.env.ORDER_MDB_URI   || "mongodb://localhost:27017/order_db";
+const AUTH_URI    = buildMongoUri({ ...mongoCreds, dbName: process.env.AUTH_MDB_DBNAME    || "auth_db" });
+const PRODUCT_URI = buildMongoUri({ ...mongoCreds, dbName: process.env.PRODUCT_MDB_DBNAME || "product_db" });
+const ORDER_URI   = buildMongoUri({ ...mongoCreds, dbName: process.env.ORDER_MDB_DBNAME   || "order_db" });
 
 const authConn    = mongoose.createConnection(AUTH_URI);
 const productConn = mongoose.createConnection(PRODUCT_URI);
