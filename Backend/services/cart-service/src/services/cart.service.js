@@ -28,6 +28,11 @@ const getVariantStock = async (model, productId, variantId) => {
   const res = await fetchWithTimeout(
     `${productServiceUrl}/internal/stock/${model}/${productId}/${variantId}`,
   );
+  if (!res.ok) {
+    const err = new Error(CART_MSGS.PRODUCT_SERVICE_UNAVAILABLE);
+    err.status = 502;
+    throw err;
+  }
   const data = await res.json();
   return data.count ?? 0;
 };

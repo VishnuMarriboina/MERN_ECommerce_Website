@@ -41,6 +41,7 @@ const buyAllCartItems = async (userId, paymentType = "Online", paymentMode = nul
           quantity: item.quantity,
         }),
       });
+      if (!decrementRes.ok) continue;
       result = await decrementRes.json();
     } catch (err) {
       continue; // product-service unreachable/timed out — treat this item as unavailable

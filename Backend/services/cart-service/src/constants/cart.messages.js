@@ -11,4 +11,5 @@ module.exports = {
   OUT_OF_STOCK: "All items are out of stock",
   INVALID_MODEL: "Invalid product model",
   ORDER_CREATE_FAILED: "Failed to place order, please try again",
+  PRODUCT_SERVICE_UNAVAILABLE: "Unable to verify product availability, please try again",
 };
