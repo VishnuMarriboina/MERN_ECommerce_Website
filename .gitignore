@@ -14,6 +14,8 @@ node_modules/
 **/.env.production
 .env.secrets
 **/.env.secrets
+# Single consolidated Render deployment reference (Backend/.envRender) —
+# copy-paste source for each service's Render dashboard, not read by any code.
 .envRender
 **/.envRender
 !**/.env.example

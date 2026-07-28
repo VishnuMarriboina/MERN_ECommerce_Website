@@ -4,6 +4,71 @@ Node.js + Express + MongoDB backend built as an **npm workspaces monorepo**. All
 
 ---
 
+## How It Works (start here)
+
+This section is the "explain it on a whiteboard" version. The reference material below (routes, models, env vars) is for when you need exact details.
+
+### The big idea
+
+Instead of one big Express app, the backend is split into 5 independent Node processes, each with its own `package.json`, its own MongoDB database, and its own port. They only know how to talk HTTP — nothing is shared in memory between them.
+
+- **gateway** — the only process the frontend ever talks to. It doesn't contain business logic; it just looks at the URL prefix (`/api/auth`, `/api/products`, ...) and forwards (proxies) the request to the right service, then streams the response back.
+- **auth-service, product-service, cart-service, order-service** — each owns one slice of the domain and one MongoDB database (`auth_db`, `product_db`, `cart_db`, `order_db`). No service reaches into another service's database directly — if cart-service needs product data, it makes an HTTP call to product-service's `/internal/*` routes (see "Internal routes" below).
+- **packages/shared** (`@ecommerce/shared`) — not a service, just a library of code every service imports: error classes, the response-shape helper, the JWT middleware, logger, etc. It exists so five services don't each reinvent "how do I send an error response."
+
+Why split it this way at all: each service can be deployed, scaled, or restarted independently (e.g. `PRODUCT_SERVICE_URLS` can list 3 instances behind the gateway's round-robin balancer, while auth-service stays at 1), and a bug/crash in one service doesn't take the others down.
+
+### How a request actually travels
+
+Concretely, for `GET /api/products/getProducts?category=shirts`:
+
+1. Browser sends the request to `gateway` on port 3000.
+2. `gateway/src/app.js` runs `helmet`, CORS, and the global rate limiter, then hands off to `gateway/src/routes/product.routes.js` because the path starts with `/products`.
+3. That route file built a `balancer` at startup from `PRODUCT_SERVICE_URLS` (one or more URLs) and wraps it in `createProxy(balancer)` (`gateway/src/services/proxy.service.js`). On every request, `balancer.next()` picks the next instance URL round-robin, and [`express-http-proxy`](https://www.npmjs.com/package/express-http-proxy) forwards the request there as-is (headers, body, query string).
+4. `product-service` (port 3002) receives it exactly like it would from any direct client — the gateway is invisible to it.
+5. The response flows straight back through the gateway to the browser. The gateway does not transform, cache, or inspect the response body.
+
+This is why adding a brand-new route to a service (e.g. a new `/api/products/wishlist` endpoint) requires **zero gateway changes** as long as it falls under an existing prefix (`/products`) — the gateway proxies the whole prefix, not individual routes.
+
+### Authentication — where it's actually checked
+
+This trips people up, so it's worth being explicit:
+
+- The **gateway does not verify JWTs**. `gateway/src/middlewares/auth.middleware.js` exports an `authCheck` that only checks "is there a `Bearer ...` header at all" — and as of now it isn't even wired into any gateway route. The gateway is auth-agnostic; it just plumbs the `Authorization` header through to whichever service is downstream.
+- **Each service verifies the token itself**, independently, using the shared middleware (`packages/shared/src/middlewares/auth.middleware.js`). It calls `jwt.verify(token, process.env.JWT_SECRET)` and puts the decoded payload (which includes `User_Role`) on `req.user`.
+- This only works because **every service's `.env` has the same `JWT_SECRET`** — there's no central session store the services call out to. A token signed by auth-service is trusted by product-service, cart-service, and order-service purely because they all hold the same secret. If you ever rotate `JWT_SECRET`, it must be rotated in all four service `.env` files at once, or tokens minted before the rotation will fail verification everywhere except the service that hasn't been updated yet.
+- Refresh tokens are the one piece of real server-side state: `auth-service` stores them in the `Session` model (`services/auth-service/src/models/session.model.js`) so they can be revoked. Access tokens are stateless JWTs and can't be revoked before they expire — only refresh tokens can.
+
+### Walkthrough: login → protected request
+
+1. `POST /api/auth/login` → gateway proxies to auth-service → `AuthController.login` (`services/auth-service/src/controllers/auth.controller.js`) calls `authService.login`, which checks the password hash and signs an access token + refresh token.
+2. The refresh token is set as an **httpOnly cookie**; the access token comes back in the JSON body. The frontend stores the access token (see `FrontEnd/src/utils/APIKit.jsx`) and attaches it as `Authorization: Bearer <token>` on every subsequent request.
+3. `PUT /api/users/update-profile` → gateway proxies to auth-service unchanged → auth-service's own auth middleware verifies the JWT → request proceeds.
+4. When the access token expires, the frontend calls `POST /api/auth/refresh-token`, which reads the httpOnly cookie (not a header) and issues a new access token — this is why that one route doesn't need a `Bearer` token at all.
+
+### Walkthrough: checkout (the one flow that touches three services)
+
+`POST /api/cart/buy-all` is the most "microservices-y" request in the system — cart-service acts as an orchestrator, calling two other services synchronously and one fire-and-forget:
+
+```
+Frontend → gateway → cart-service
+                        │
+                        ├─ 1. PUT product-service /internal/stock/decrement   (must succeed — stock is finite)
+                        ├─ 2. POST order-service  /internal/orders            (creates the order record)
+                        ├─ 3. clears the cart in cart_db
+                        └─ 4. PUT product-service /internal/purchase/increment (fire-and-forget — checkout doesn't wait on this)
+```
+
+These `/internal/*` calls are plain HTTP (`fetchWithTimeout` from `@ecommerce/shared/src/utils/httpClient`) using `PRODUCT_SERVICE_URL` / `ORDER_SERVICE_URL` env vars set directly on cart-service — they go **service-to-service, bypassing the gateway entirely**. The gateway is only for browser-facing traffic; internal routes are never registered in any gateway route file, so they aren't reachable from the internet unless a service's port is directly exposed.
+
+If step 1 fails (not enough stock), the whole checkout aborts before an order is ever created — there's no distributed transaction/rollback here, just careful ordering (decrement stock and create the order before touching the cart, so a failure leaves the cart intact for the user to retry).
+
+### A loose thread worth knowing about
+
+`services/cart-service/.env.development` defines `PRODUCT_GRPC_URL=localhost:50052` and `packages/shared/proto/` exists as a directory, but there is **no gRPC client or server code anywhere in the codebase** — every inter-service call today is plain REST/HTTP via `fetchWithTimeout`. Treat the gRPC env var and proto folder as unused scaffolding for a future optimization, not something currently in the request path.
+
+---
+
 ## Architecture
 
 ```
