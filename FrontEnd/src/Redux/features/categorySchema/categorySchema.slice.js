@@ -4,7 +4,7 @@ import {
   fetchAllCategorySchemas,
   defineCategorySchema,
   deleteCategorySchema,
-} from "../thunks/categorySchemaThunks";
+} from "./categorySchema.thunk";
 
 const initialState = {
   loading:    false,
@@ -60,4 +60,3 @@ const categorySchemaSlice = createSlice({
 
 export const { clearSchema } = categorySchemaSlice.actions;
 export default categorySchemaSlice.reducer;
-export { fetchCategorySchema, fetchAllCategorySchemas, defineCategorySchema, deleteCategorySchema };

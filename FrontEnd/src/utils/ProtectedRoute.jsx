@@ -1,9 +1,8 @@
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { selectCurrentUser } from "../Redux/slices/AuthSlice";
+import { useAuth } from "../Redux/features/auth";
 
 const ProtectedRoute = ({ children }) => {
-  const user = useSelector(selectCurrentUser);
+  const { user } = useAuth();
 
   // Fix: If user is undefined (still loading from persist), don't redirect yet
   if (user === undefined) {

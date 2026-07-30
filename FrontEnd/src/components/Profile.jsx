@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { selectCurrentUser, editProfile } from "../Redux/slices/AuthSlice";
+import { useAuth } from "../Redux/features/auth";
 import extractPhone from "../utils/extractPhone";
 import { AVATAR_COLORS } from "./DataFolder/componentsData";
 
@@ -76,8 +75,7 @@ const Field = ({ icon, label, children }) => (
 );
 
 export default function Profile() {
-  const user = useSelector(selectCurrentUser);
-  const dispatch = useDispatch();
+  const { user, updateProfile } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -119,7 +117,7 @@ export default function Profile() {
   const handleSave = () => {
     if (validateForm()) {
       const formattedPhone = extractPhone(editData.phoneNumber);
-      dispatch(editProfile({ ...editData, phoneNumber: formattedPhone }));
+      updateProfile({ ...editData, phoneNumber: formattedPhone });
       setProfileData({ ...editData, phoneNumber: formattedPhone });
       setIsEditing(false);
     }

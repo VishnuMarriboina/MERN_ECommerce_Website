@@ -18,17 +18,14 @@ import PrivacyPolicy from "../pages/info/PrivacyPolicy";
 import { Routes, Route } from "react-router-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Home from "./Home";
-import { useDispatch, useSelector } from "react-redux";
-import { logoutUser, selectCurrentUser } from "../Redux/slices/AuthSlice";
+import { useAuth } from "../Redux/features/auth";
 import { persistor } from "../Redux/Store";
 import Footer from "./Footer";
 
 function Dashboard() {
-  const dispatch = useDispatch();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const user = useSelector(selectCurrentUser);
   const [activeTab, setActiveTab] = useState(() => {
     return sessionStorage.getItem("activeTab");
   });
@@ -105,7 +102,7 @@ function Dashboard() {
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
     persistor.purge();
-    dispatch(logoutUser());
+    logout();
     navigate("/login", { replace: true });
   };
 

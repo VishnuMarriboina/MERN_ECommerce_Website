@@ -7,7 +7,7 @@ import {
   addGenericVariant,
   updateGenericVariant,
   deleteGenericVariant,
-} from "../thunks/genericProductThunks";
+} from "./genericProduct.thunk";
 
 const initialState = {
   loading: false,
@@ -61,13 +61,3 @@ const genericProductSlice = createSlice({
 
 export const { clearGenericError } = genericProductSlice.actions;
 export default genericProductSlice.reducer;
-
-export {
-  fetchGenericProducts,
-  regProduct,
-  updateGenericProduct,
-  deleteGenericProduct,
-  addGenericVariant,
-  updateGenericVariant,
-  deleteGenericVariant,
-};

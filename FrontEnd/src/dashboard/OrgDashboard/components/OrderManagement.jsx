@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchAllOrders,
-  updateOrderStatus,
-} from "../../../Redux/slices/OrderSlice";
+import { useOrder } from "../../../Redux/features/order";
 import CustomModal from "../../../components/CustomModal";
 import {
   ORDER_STATUS_STEPS as STATUS_STEPS,
@@ -44,7 +40,9 @@ const PencilIcon = () => (
 
 
 export default function OrderManagement() {
-  const dispatch = useDispatch();
+  const {
+    allOrders: ordersData, loading, error, loadAllOrders, updateStatus: updateOrderStatus,
+  } = useOrder();
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState(() => {
@@ -58,15 +56,9 @@ export default function OrderManagement() {
 
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  const {
-    allOrders: ordersData,
-    loading,
-    error,
-  } = useSelector((state) => state.order);
-
   useEffect(() => {
-    dispatch(fetchAllOrders());
-  }, [dispatch]);
+    loadAllOrders();
+  }, [loadAllOrders]);
 
   const statusFlow = {
     Pending: "Confirmed",
@@ -82,12 +74,10 @@ export default function OrderManagement() {
 
   const updateStatus = async (newStatus) => {
     try {
-      const res = await dispatch(
-        updateOrderStatus({ orderId: selectedOrder._id, status: newStatus })
-      );
+      const res = await updateOrderStatus({ orderId: selectedOrder._id, status: newStatus });
 
       // Always re-fetch
-      await dispatch(fetchAllOrders());
+      await loadAllOrders();
 
       if (res?.success) {
         setModalTitle("Status Successful!");

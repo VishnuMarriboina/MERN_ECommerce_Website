@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import {
   addToCart, getCart, updateCartQuantity,
   removeFromCart, clearCart, buyAllCartItemsAsync,
-} from "../thunks/cartThunks";
+} from "./cart.thunk";
 
 const initialState = {
   cartItems: [],
@@ -67,8 +67,3 @@ const cartSlice = createSlice({
 });
 
 export default cartSlice.reducer;
-
-export {
-  addToCart, getCart, updateCartQuantity,
-  removeFromCart, clearCart, buyAllCartItemsAsync,
-};

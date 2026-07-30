@@ -1,12 +1,6 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchGenericProducts, regProduct, updateGenericProduct,
-  deleteGenericProduct, addGenericVariant, deleteGenericVariant,
-} from "../../../Redux/slices/GenericProductSlice";
-import {
-  fetchCategorySchema, defineCategorySchema, deleteCategorySchema, clearSchema,
-} from "../../../Redux/slices/CategorySchemaSlice";
+import { useGenericProduct } from "../../../Redux/features/genericProduct";
+import { useCategorySchema } from "../../../Redux/features/categorySchema";
 import CustomModal from "../../../components/CustomModal";
 
 /* ─── SVG Icons ─────────────────────────────────────────────────── */
@@ -211,9 +205,14 @@ function FormSection({ title, badge, hint, children }) {
 
 /* ─── Component ─────────────────────────────────────────────────── */
 export default function GenericProductPanel() {
-  const dispatch = useDispatch();
-  const { loading: prodLoading, products } = useSelector(s => s.genericProduct);
-  const { loading: schLoading, schema }    = useSelector(s => s.categorySchema);
+  const {
+    loading: prodLoading, products,
+    loadProducts, addProduct, updateProduct, deleteProduct, addVariant, deleteVariant,
+  } = useGenericProduct();
+  const {
+    loading: schLoading, schema,
+    loadSchema, defineSchema, removeSchema, clear: clearSchema,
+  } = useCategorySchema();
   const loading = prodLoading || schLoading;
 
   /* ── Browse state ── */
@@ -248,7 +247,7 @@ export default function GenericProductPanel() {
   const [confirmModal, setConfirmModal] = useState({ open:false, message:"", onConfirm:null });
 
   const notify = (type, title, message) => setStatusModal({ open:true, type, title, message });
-  const refetch = () => { if (activeCategory) dispatch(fetchGenericProducts(activeCategory)); };
+  const refetch = () => { if (activeCategory) loadProducts(activeCategory); };
 
   /* ── Search ── */
   const handleSearch = (cat) => {
@@ -256,13 +255,13 @@ export default function GenericProductPanel() {
     if (!c) return;
     setCategoryInput(c);
     setActiveCategory(c);
-    dispatch(fetchGenericProducts(c));
-    dispatch(fetchCategorySchema(c));
+    loadProducts(c);
+    loadSchema(c);
   };
 
   const handleClear = () => {
     setCategoryInput(""); setActiveCategory("");
-    dispatch(clearSchema());
+    clearSchema();
   };
 
   /* ── Schema builder open ── */
@@ -273,7 +272,7 @@ export default function GenericProductPanel() {
   };
 
   const handleSaveSchema = async () => {
-    const result = await dispatch(defineCategorySchema({ categoryName: activeCategory, fields: sFields, variantFields: sVarFields }));
+    const result = await defineSchema({ categoryName: activeCategory, fields: sFields, variantFields: sVarFields });
     setShowSchemaModal(false);
     if (result.meta.requestStatus === "fulfilled") notify("success", "Schema Saved!", `Schema for "${activeCategory}" is now active.`);
     else notify("error", "Save Failed", result.payload?.message || "Could not save schema.");
@@ -284,7 +283,7 @@ export default function GenericProductPanel() {
       open:true, message:`Delete the schema for "${activeCategory}"? Products already saved are not affected.`,
       onConfirm: async () => {
         setConfirmModal({ open:false, message:"", onConfirm:null });
-        await dispatch(deleteCategorySchema(activeCategory));
+        await removeSchema(activeCategory);
         notify("success","Schema Deleted",`Schema for "${activeCategory}" removed.`);
       },
     });
@@ -332,41 +331,41 @@ export default function GenericProductPanel() {
 
   /* ── Submits ── */
   const handleAddProduct = async () => {
-    const result = await dispatch(regProduct({
+    const result = await addProduct({
       ...pForm,
       attributes: buildProductAttrs(),
       variants:[{ cost:Number(vForm.cost), count:Number(vForm.count), image_url:vForm.image_url||"", attributes:buildVariantAttrs() }],
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus==="fulfilled") { refetch(); notify("success","Product Registered!",result.payload?.message||"Done."); }
     else notify("error","Registration Failed", result.payload?.message||result.payload?.error||"Something went wrong.");
   };
   const handleEditProduct = async () => {
-    const result = await dispatch(updateGenericProduct({
+    const result = await updateProduct({
       id:editingProduct._id||editingProduct.id, name:pForm.name, brand:pForm.brand,
       description:pForm.description, attributes:buildProductAttrs(),
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus==="fulfilled") { refetch(); notify("success","Updated!","Product updated."); }
     else notify("error","Update Failed",result.payload?.message||"Update failed.");
   };
   const handleAddVariant = async () => {
-    const result = await dispatch(addGenericVariant({
+    const result = await addVariant({
       id:editingProduct._id||editingProduct.id,
       variantData:{ cost:Number(vForm.cost), count:Number(vForm.count), image_url:vForm.image_url||"", attributes:buildVariantAttrs() },
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus==="fulfilled") { refetch(); notify("success","Variant Added!","New variant added."); }
     else notify("error","Failed",result.payload?.message||"Failed to add variant.");
   };
   const handleDeleteProduct = (id) => {
     setConfirmModal({ open:true, message:"Delete this product and all its variants? This cannot be undone.",
-      onConfirm: async () => { setConfirmModal({open:false,message:"",onConfirm:null}); await dispatch(deleteGenericProduct(id)); refetch(); },
+      onConfirm: async () => { setConfirmModal({open:false,message:"",onConfirm:null}); await deleteProduct(id); refetch(); },
     });
   };
   const handleDeleteVariant = (productId, variantId) => {
     setConfirmModal({ open:true, message:"Delete this variant?",
-      onConfirm: async () => { setConfirmModal({open:false,message:"",onConfirm:null}); await dispatch(deleteGenericVariant({id:productId,variantId})); refetch(); },
+      onConfirm: async () => { setConfirmModal({open:false,message:"",onConfirm:null}); await deleteVariant({id:productId,variantId}); refetch(); },
     });
   };
 

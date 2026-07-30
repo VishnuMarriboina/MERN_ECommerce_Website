@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import {
   placeOrder, fetchMyOrders, fetchAllOrders,
   updateOrderStatus, CancelOrder,
-} from "../thunks/orderThunks";
+} from "./order.thunk";
 
 const initialState = {
   orders: [],
@@ -50,11 +50,3 @@ const orderSlice = createSlice({
 });
 
 export default orderSlice.reducer;
-
-export const selectOrders = (state) => state.order.orders;
-export const selectAllOrders = (state) => state.order.allOrders;
-export const selectOrderLoading = (state) => state.order.loading;
-export const selectOrderError = (state) => state.order.error;
-export const selectOrderSuccess = (state) => state.order.successMessage;
-
-export { placeOrder, fetchMyOrders, fetchAllOrders, updateOrderStatus, CancelOrder };
