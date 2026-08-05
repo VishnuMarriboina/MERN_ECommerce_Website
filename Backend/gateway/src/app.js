@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const { allowedOrigins } = require("./config/env.config");
 const rateLimiter = require("./middlewares/rateLimiter.middleware");
 const errorMiddleware = require("./middlewares/error.middleware");
+const { requestIdMiddleware } = require("./middlewares/requestId.middleware");
 const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
 const cartRoutes = require("./routes/cart.routes");
@@ -24,8 +25,11 @@ app.use(cors({
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+  exposedHeaders: ["X-Request-ID"],
 }));
+
+app.use(requestIdMiddleware);
 
 app.use(rateLimiter);
 

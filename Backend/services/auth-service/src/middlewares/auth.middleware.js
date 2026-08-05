@@ -20,7 +20,7 @@ class AuthMiddleware {
       if (err.name === "TokenExpiredError") {
         return res.status(STATUS.UNAUTHORIZED).json({ error: MESSAGES.AUTH.TOKEN_EXPIRED });
       }
-      return res.status(STATUS.FORBIDDEN).json({ error: MESSAGES.AUTH.INVALID_TOKEN });
+      return res.status(STATUS.UNAUTHORIZED).json({ error: MESSAGES.AUTH.INVALID_TOKEN });
     }
   };
 }

@@ -10,7 +10,22 @@ const RETRY_DELAYS_MS = process.env.PROXY_RETRY_DELAYS_MS
   : DEFAULT_RETRY_DELAYS_MS;
 const PROXY_TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS) || 10000;
 
+// Headers copied straight through from the downstream response that would be
+// misleading once we've replaced the body with our own gateway-timeout message
+// (e.g. Render's own "hibernate-rate-limited" routing/edge headers).
+const STALE_PASSTHROUGH_HEADERS = ["x-render-routing", "x-render-origin-server"];
+
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const sendGatewayTimeout = (userRes) => {
+  STALE_PASSTHROUGH_HEADERS.forEach((h) => userRes.removeHeader(h));
+  userRes.setHeader("content-type", "application/json");
+  userRes.status(504);
+  return Buffer.from(JSON.stringify({
+    success: false,
+    message: "Gateway timeout: the downstream service didn't respond in time. Please try again shortly.",
+  }));
+};
 
 const buildForwardHeaders = (req) => {
   const headers = {};
@@ -56,6 +71,18 @@ module.exports = {
     parseReqBody: true,
     timeout: PROXY_TIMEOUT_MS,
     proxyReqPathResolver: (req) => req.originalUrl,
+    // express-http-proxy's default error handler writes a bare, empty 504 on a
+    // socket timeout (see its connectionResetHandler) — replace it with a JSON
+    // body consistent with the rest of the gateway's error responses.
+    proxyErrorHandler: (err, res, next) => {
+      const isTimeout = err && ["ECONNRESET", "ECONNABORTED", "ETIMEDOUT"].includes(err.code);
+      if (!isTimeout) return next(err);
+      if (res.headersSent) return;
+      res.status(504).json({
+        success: false,
+        message: "Gateway timeout: the downstream service didn't respond in time. Please try again shortly.",
+      });
+    },
     userResHeaderDecorator: (headers, userReq, userRes) => {
       const corsHeaders = [
         "access-control-allow-origin",
@@ -73,6 +100,7 @@ module.exports = {
     userResDecorator: async (proxyRes, proxyResData, userReq, userRes) => {
       let statusCode = proxyRes.statusCode;
       let resultData = proxyResData;
+      let retriesExhaustedByTimeout = false;
 
       for (
         let attempt = 0;
@@ -86,8 +114,16 @@ module.exports = {
           resultData = retryResult.buffer;
           if (retryResult.contentType) userRes.setHeader("content-type", retryResult.contentType);
         } catch (_err) {
+          retriesExhaustedByTimeout = true;
           break;
         }
+      }
+
+      // Downstream never recovered (still a retryable status, or the last retry
+      // itself timed out) — surface a clear gateway-timeout message instead of
+      // forwarding whatever error page/status the downstream/Render edge sent.
+      if (retriesExhaustedByTimeout || RETRYABLE_STATUS_CODES.has(statusCode)) {
+        return sendGatewayTimeout(userRes);
       }
 
       userRes.status(statusCode);

@@ -1,5 +1,14 @@
 import axios from "axios";
 import { refreshAccessToken } from "./RefreshToken";
+import { store } from "../Redux/Store";
+import { logoutUser } from "../Redux/slices/AuthSlice";
+
+// Clears the persisted auth slice (not just the raw token) so ProtectedRoute
+// doesn't let a stale persisted `user` back in on next load, then redirects.
+const forceLogout = () => {
+  store.dispatch(logoutUser());
+  window.location.href = "/login";
+};
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -72,8 +81,7 @@ api.interceptors.response.use(
         const newAccessToken = await refreshAccessToken();
 
         if (!newAccessToken) {
-          localStorage.removeItem("accessToken");
-          window.location.href = "/login";
+          forceLogout();
           return Promise.reject("Refresh token failed");
         }
 
@@ -87,8 +95,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (err) {
         processQueue(err, null);
-        localStorage.removeItem("accessToken");
-        window.location.href = "/login";
+        forceLogout();
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
