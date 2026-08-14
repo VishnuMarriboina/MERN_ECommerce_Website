@@ -1,7 +1,7 @@
 import axios from "axios";
 import { refreshAccessToken } from "./RefreshToken";
 import { store } from "../Redux/Store";
-import { logoutUser } from "../Redux/slices/AuthSlice";
+import { logoutUser } from "../Redux/features/auth";
 
 // Clears the persisted auth slice (not just the raw token) so ProtectedRoute
 // doesn't let a stale persisted `user` back in on next load, then redirects.
