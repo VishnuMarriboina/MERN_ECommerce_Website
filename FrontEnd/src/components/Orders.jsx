@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchMyOrders } from "../Redux/slices/OrderSlice";
+import { useOrder } from "../Redux/features/order";
 import { useNavigate } from "react-router-dom";
 import {
   STATUS_OPTIONS,
@@ -65,9 +64,8 @@ function formatDate(dateString) {
 }
 
 export default function Orders() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, orders } = useSelector((state) => state.order);
+  const { loading, error, orders, loadMyOrders } = useOrder();
 
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedItem, setSelectedItem] = useState(null);
@@ -79,8 +77,8 @@ export default function Orders() {
   const [pendingStar, setPendingStar] = useState({});
 
   useEffect(() => {
-    dispatch(fetchMyOrders());
-  }, [dispatch]);
+    loadMyOrders();
+  }, [loadMyOrders]);
 
   const filteredOrders = selectedStatus === "All"
     ? (orders || [])

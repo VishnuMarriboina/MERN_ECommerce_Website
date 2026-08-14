@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchGenericProducts, regProduct, updateGenericProduct,
-  deleteGenericProduct, addGenericVariant, updateGenericVariant, deleteGenericVariant,
-} from "../../../Redux/slices/GenericProductSlice";
-import {
-  fetchCategorySchema,
-  fetchAllCategorySchemas,
-} from "../../../Redux/slices/CategorySchemaSlice";
+import { useGenericProduct } from "../../../Redux/features/genericProduct";
+import { useCategorySchema } from "../../../Redux/features/categorySchema";
 import CustomModal from "../../../components/CustomModal";
 
 /* ─── Fixed categories ───────────────────────────────────────────── */
@@ -68,9 +61,13 @@ const BASE_FIELD_NAMES = new Set(["name", "brand", "description", "category"]);
 
 /* ─── Component ──────────────────────────────────────────────────── */
 export default function ProductManagement() {
-  const dispatch = useDispatch();
-  const { loading: prodLoading, products }          = useSelector(s => s.genericProduct);
-  const { loading: schLoading, schema, allSchemas } = useSelector(s => s.categorySchema);
+  const {
+    loading: prodLoading, products,
+    loadProducts, addProduct, updateProduct, deleteProduct, addVariant, updateVariant, deleteVariant,
+  } = useGenericProduct();
+  const {
+    loading: schLoading, schema, allSchemas, loadSchema, loadAllSchemas,
+  } = useCategorySchema();
   const loading = prodLoading || schLoading;
 
   const extraCategories = allSchemas.map(s => s.categoryName).filter(n => !CATEGORIES.includes(n));
@@ -89,13 +86,13 @@ export default function ProductManagement() {
   const [statusModal, setStatusModal]           = useState({ open: false, type: "info", title: "", message: "" });
   const [confirmModal, setConfirmModal]         = useState({ open: false, message: "", onConfirm: null });
 
-  useEffect(() => { dispatch(fetchAllCategorySchemas()); }, []);
+  useEffect(() => { loadAllSchemas(); }, [loadAllSchemas]);
   useEffect(() => {
     sessionStorage.setItem("pmCategory", selectedCategory);
     setExpandedRows({});
-    dispatch(fetchGenericProducts(selectedCategory));
-    dispatch(fetchCategorySchema(selectedCategory));
-  }, [selectedCategory]);
+    loadProducts(selectedCategory);
+    loadSchema(selectedCategory);
+  }, [selectedCategory, loadProducts, loadSchema]);
 
   /* ── Stats ── */
   const totalStock = products.reduce((s, p) => s + (p.variants?.reduce((a, v) => a + (v.count || 0), 0) ?? 0), 0);
@@ -104,7 +101,7 @@ export default function ProductManagement() {
   const avgRating  = allRated.length ? (allRated.reduce((s, v) => s + v.rating, 0) / allRated.length).toFixed(1) : null;
 
   const notify  = (type, title, message) => setStatusModal({ open: true, type, title, message });
-  const refetch = () => dispatch(fetchGenericProducts(selectedCategory));
+  const refetch = () => loadProducts(selectedCategory);
 
   /* ── Schema-filtered fields (skip name/brand/description/category) ── */
   const schemaOnlyFields  = (schema?.fields || []).filter(f => !BASE_FIELD_NAMES.has(f.name.toLowerCase()));
@@ -157,50 +154,50 @@ export default function ProductManagement() {
 
   /* ── Submits ── */
   const handleAddProduct = async () => {
-    const result = await dispatch(regProduct({
+    const result = await addProduct({
       category: selectedCategory, ...baseForm,
       attributes: schemaValsToObj(schemaOnlyFields, prodVals),
       variants: [{ cost: Number(variantBase.cost), count: Number(variantBase.count), image_url: variantBase.image_url || "", attributes: schemaValsToObj(schema?.variantFields, variantVals) }],
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus === "fulfilled") { refetch(); notify("success", "Product Added!", "Product added successfully."); }
     else notify("error", "Failed", result.payload?.message || result.payload?.error || "Could not add product.");
   };
   const handleEditProduct = async () => {
-    const result = await dispatch(updateGenericProduct({
+    const result = await updateProduct({
       id: editingProduct._id || editingProduct.id, name: baseForm.name, brand: baseForm.brand,
       description: baseForm.description, attributes: schemaValsToObj(schemaOnlyFields, prodVals),
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus === "fulfilled") { refetch(); notify("success", "Updated!", "Product updated."); }
     else notify("error", "Failed", result.payload?.message || "Update failed.");
   };
   const handleAddVariant = async () => {
-    const result = await dispatch(addGenericVariant({
+    const result = await addVariant({
       id: editingProduct._id || editingProduct.id,
       variantData: { cost: Number(variantBase.cost), count: Number(variantBase.count), image_url: variantBase.image_url || "", attributes: schemaValsToObj(schema?.variantFields, variantVals) },
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus === "fulfilled") { refetch(); notify("success", "Variant Added!", "Variant added successfully."); }
     else notify("error", "Failed", result.payload?.message || "Failed to add variant.");
   };
   const handleUpdateVariant = async () => {
-    const result = await dispatch(updateGenericVariant({
+    const result = await updateVariant({
       id: editingProduct._id || editingProduct.id,
       variantId: editingVariant._id || editingVariant.id,
       variantData: { cost: Number(variantBase.cost), count: Number(variantBase.count), image_url: variantBase.image_url || "", attributes: schemaValsToObj(schema?.variantFields, variantVals) },
-    }));
+    });
     closeModal();
     if (result.meta.requestStatus === "fulfilled") { refetch(); notify("success", "Variant Updated!", "Variant updated successfully."); }
     else notify("error", "Failed", result.payload?.message || "Update failed.");
   };
   const handleDeleteProduct = (id) => setConfirmModal({
     open: true, message: "Delete this product and all its variants? This cannot be undone.",
-    onConfirm: async () => { setConfirmModal({ open: false, message: "", onConfirm: null }); await dispatch(deleteGenericProduct(id)); refetch(); },
+    onConfirm: async () => { setConfirmModal({ open: false, message: "", onConfirm: null }); await deleteProduct(id); refetch(); },
   });
   const handleDeleteVariant = (productId, variantId) => setConfirmModal({
     open: true, message: "Delete this variant? This cannot be undone.",
-    onConfirm: async () => { setConfirmModal({ open: false, message: "", onConfirm: null }); await dispatch(deleteGenericVariant({ id: productId, variantId })); refetch(); },
+    onConfirm: async () => { setConfirmModal({ open: false, message: "", onConfirm: null }); await deleteVariant({ id: productId, variantId }); refetch(); },
   });
 
   const modalTitle  = { add: `Add New ${selectedCategory}`, editProduct: "Edit Product", addVariant: "Add Variant", editVariant: "Edit Variant" }[modalMode];

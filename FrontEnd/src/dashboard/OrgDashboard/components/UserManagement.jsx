@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchUsers } from "../../../Redux/slices/AuthSlice";
+import { useAuth } from "../../../Redux/features/auth";
 import { AVATAR_COLORS } from "../../../components/DataFolder/componentsData";
 
 /* ─── SVG Icons ───────────────────────────────────────────────────── */
@@ -35,21 +34,19 @@ const avatarColor = (name) =>
 
 /* ─── Component ───────────────────────────────────────────────────── */
 export default function UserManagement() {
-  const dispatch = useDispatch();
+  const { loading, error, loadUsers } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
   const [usersData, setUsersData] = useState([]);
 
-  const { loading, error } = useSelector((state) => state.auth);
-
   useEffect(() => {
-    const loadUsers = async () => {
-      const data = await dispatch(fetchUsers()).unwrap();
+    const load = async () => {
+      const data = await loadUsers().unwrap();
       setUsersData(data);
     };
 
-    loadUsers();
-  }, [dispatch]);
+    load();
+  }, [loadUsers]);
 
   const getUsersArray = () => {
     if (Array.isArray(usersData)) return usersData;

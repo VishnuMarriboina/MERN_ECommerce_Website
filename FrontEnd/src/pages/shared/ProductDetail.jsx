@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../../Redux/slices/CartSlice";
+import { useCart } from "../../Redux/features/cart";
 import { useProductVariants } from "../../hooks/useProductVariants";
 import { usePageModal } from "./usePageModal";
 import CustomModal from "../../components/CustomModal";
@@ -22,7 +21,7 @@ const toLabel = (key) =>
 export default function ProductDetail() {
   const location = useLocation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const { addItem } = useCart();
 
   const { product, defaultImage, backPath } = location.state || {};
 
@@ -122,16 +121,14 @@ export default function ProductDetail() {
     }
 
     setAddingToCart(true);
-    const result = await dispatch(
-      addToCart({
-        productId,
-        variantId: displayData._id || displayData.id,
-        productModel: product.category,
-      })
-    );
+    const result = await addItem({
+      productId,
+      variantId: displayData._id || displayData.id,
+      productModel: product.category,
+    });
     setAddingToCart(false);
 
-    if (addToCart.fulfilled.match(result)) {
+    if (result.meta.requestStatus === "fulfilled") {
       showModal(
         "success",
         "✅ Added to Cart",

@@ -3,12 +3,11 @@ import { Routes, Route } from "react-router-dom";
 import Dashboard from "./dashboard/Dashboard";
 import Login from "./components/Login";
 import ProtectedRoute from "./utils/ProtectedRoute";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "./Redux/slices/AuthSlice";
+import { useAuth } from "./Redux/features/auth";
 import AdminDashboard from "./dashboard/OrgDashboard/Admin/AdminDashboard";
 
 function App() {
-  const user = useSelector(selectCurrentUser);
+  const { user } = useAuth();
 
   return (
     <Routes>

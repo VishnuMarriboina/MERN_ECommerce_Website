@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { logoutUser } from "../../../Redux/slices/AuthSlice";
+import { useAuth } from "../../../Redux/features/auth";
 import { persistor } from "../../../Redux/Store";
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { SIDEBAR_TABS } from "../DataFolder/orgDashboardData";
 
 export default function Sidebar({ activeTab, setActiveTab }) {
   const tabs = SIDEBAR_TABS;
-  const dispatch = useDispatch();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -18,7 +17,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
     persistor.purge();
-    dispatch(logoutUser());
+    logout();
     navigate("/login", { replace: true });
   };
 

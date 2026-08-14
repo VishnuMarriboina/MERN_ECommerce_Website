@@ -1,8 +1,7 @@
 // ===============================new code===============================
 
 import React, { useRef, useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "../../../Redux/slices/AuthSlice";
+import { useAuth } from "../../../Redux/features/auth";
 import { BREADCRUMB_MAP } from "../DataFolder/orgDashboardData";
 import Sidebar from "../components/Sidebar";
 import ProductManagement from "../components/ProductManagement";
@@ -18,7 +17,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState(() => {
     return sessionStorage.getItem("activeTab") || "home";
   });
-  const user = useSelector(selectCurrentUser);
+  const { user } = useAuth();
   const userName = user?.name || "Admin";
   const userInitial = userName.charAt(0).toUpperCase();
 

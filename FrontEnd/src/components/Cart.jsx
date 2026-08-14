@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  getCart,
-  updateCartQuantity,
-  removeFromCart,
-  clearCart,
-  buyAllCartItemsAsync,
-} from "../Redux/slices/CartSlice";
+import { useCart } from "../Redux/features/cart";
 import { useNavigate } from "react-router-dom";
 import CustomModal from "./CustomModal";
 import Loader from "./Loader";
@@ -38,10 +31,12 @@ const fmt = (v) =>
 
 /* ─── component ───────────────────────────────────── */
 const Cart = () => {
-  const dispatch  = useDispatch();
   const navigate  = useNavigate();
 
-  const { cartItems = [], loading, error, } = useSelector((s) => s.cart);
+  const {
+    cartItems = [], loading, error,
+    loadCart, changeQuantity, removeItem, clear, buyAll,
+  } = useCart();
 
   const [localLoading, setLocalLoading]       = useState(false);
   const [confirmModal, setConfirmModal]       = useState({ open: false, message: "", onConfirm: null });
@@ -56,7 +51,7 @@ const Cart = () => {
   const [modalTitle, setModalTitle]   = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  useEffect(() => { dispatch(getCart()); }, [dispatch]);
+  useEffect(() => { loadCart(); }, [loadCart]);
 
   /* totals */
   const subtotal    = cartItems.reduce((s, i) => s + (i.productDetails?.cost ?? i.cost ?? 0) * (i.quantity || 1), 0);
@@ -68,14 +63,14 @@ const Cart = () => {
 
   /* qty handlers */
   const handleDecrease = (item) =>
-    dispatch(updateCartQuantity({ cartItemId: item._id, productModel: item.productModel, quantity: Math.max(1, (item.quantity || 1) - 1) }));
+    changeQuantity({ cartItemId: item._id, productModel: item.productModel, quantity: Math.max(1, (item.quantity || 1) - 1) });
 
   const handleIncrease = (item) =>
-    dispatch(updateCartQuantity({ cartItemId: item._id, productModel: item.productModel, quantity: (item.quantity || 1) + 1 }));
+    changeQuantity({ cartItemId: item._id, productModel: item.productModel, quantity: (item.quantity || 1) + 1 });
 
   const handleQtyChange = (item, e) => {
     const q = parseInt(e.target.value, 10);
-    dispatch(updateCartQuantity({ cartItemId: item._id, productModel: item.productModel, quantity: isNaN(q) || q < 1 ? 1 : q }));
+    changeQuantity({ cartItemId: item._id, productModel: item.productModel, quantity: isNaN(q) || q < 1 ? 1 : q });
   };
 
   /* remove */
@@ -86,7 +81,7 @@ const Cart = () => {
       onConfirm: () => {
         setConfirmModal({ open: false, message: "", onConfirm: null });
         setLocalLoading(true);
-        dispatch(removeFromCart({ cartItemId: item._id })).finally(() => setLocalLoading(false));
+        removeItem({ cartItemId: item._id }).finally(() => setLocalLoading(false));
       },
     });
 
@@ -98,7 +93,7 @@ const Cart = () => {
       onConfirm: () => {
         setConfirmModal({ open: false, message: "", onConfirm: null });
         setLocalLoading(true);
-        dispatch(clearCart()).finally(() => setLocalLoading(false));
+        clear().finally(() => setLocalLoading(false));
       },
     });
 
@@ -129,7 +124,7 @@ const Cart = () => {
       const payload = { paymentType, productDetails: cartItems };
       if (paymentType === "Online") payload.paymentMode = paymentMode;
 
-      const result = await dispatch(buyAllCartItemsAsync(payload)).unwrap();
+      const result = await buyAll(payload).unwrap();
       const { success, order, results, error: resErr } = result;
 
       if (success && order) {

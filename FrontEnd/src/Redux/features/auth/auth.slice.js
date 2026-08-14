@@ -5,9 +5,7 @@ import {
   editProfile,
   fetchUsers,
   forgotPassword,
-} from "../thunks/authThunks";
-
-// ─── Initial State ────────────────────────────────────────────────────────────
+} from "./auth.thunk";
 
 const initialState = {
   loading: false,
@@ -15,8 +13,6 @@ const initialState = {
   jwt: "",
   user: null,
 };
-
-// ─── Slice ────────────────────────────────────────────────────────────────────
 
 const authSlice = createSlice({
   name: "auth",
@@ -110,8 +106,6 @@ const authSlice = createSlice({
   },
 });
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
-
 export const { logout } = authSlice.actions;
 
 export const logoutUser = () => (dispatch) => {
@@ -119,16 +113,5 @@ export const logoutUser = () => (dispatch) => {
   sessionStorage.removeItem("activeTab");
   dispatch(logout());
 };
-
-// ─── Selectors ────────────────────────────────────────────────────────────────
-
-export const selectCurrentUser = (state) => state.auth.user;
-export const selectJwtToken = (state) => state.auth.jwt;
-export const selectAuthLoading = (state) => state.auth.loading;
-export const selectAuthError = (state) => state.auth.error;
-
-// ─── Re-export thunks so existing component imports stay unchanged ─────────────
-
-export { registerUser, handleLogin, editProfile, fetchUsers, forgotPassword };
 
 export default authSlice.reducer;

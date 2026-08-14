@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  registerUser,
-  selectAuthLoading,
-  selectAuthError,
-  selectCurrentUser,
-  handleLogin,
-  forgotPassword,
-} from "../Redux/slices/AuthSlice";
+import { useAuth } from "../Redux/features/auth";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
@@ -26,11 +18,8 @@ export default function Login() {
     confirmPassword: "",
   });
 
-  const dispatch = useDispatch();
+  const { loading, error, user, register, login, resetPassword } = useAuth();
   const navigate = useNavigate();
-  const loading = useSelector(selectAuthLoading);
-  const error = useSelector(selectAuthError);
-  const user = useSelector(selectCurrentUser);
 
   const validateFields = () => {
     let errors = {};
@@ -120,9 +109,7 @@ export default function Login() {
     if (isForgotPassword) {
       if (!validateForgotPassword()) return;
       try {
-        await dispatch(
-          forgotPassword({ email: formData.email, newPassword: formData.newPassword })
-        ).unwrap();
+        await resetPassword({ email: formData.email, newPassword: formData.newPassword }).unwrap();
         setSuccessMessage("Password updated successfully! Please login.");
         setIsForgotPassword(false);
         setFormData({
@@ -143,7 +130,7 @@ export default function Login() {
 
     if (isSignup) {
       try {
-        await dispatch(registerUser(formData)).unwrap();
+        await register(formData).unwrap();
         setSuccessMessage("✅ Registration successful! Please log in.");
         setIsSignup(false);
         setFormData({
@@ -159,9 +146,7 @@ export default function Login() {
       } catch (_) {}
     } else {
       try {
-        await dispatch(
-          handleLogin({ email: formData.email, password: formData.password })
-        ).unwrap();
+        await login({ email: formData.email, password: formData.password }).unwrap();
         navigate("/", { replace: true });
       } catch (_) {}
     }
